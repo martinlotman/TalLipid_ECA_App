@@ -1,12 +1,57 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Activity } from "lucide-react";
+import MedicationCheck from "@/components/MedicationCheck";
+import HealthDataEntry from "@/components/HealthDataEntry";
+import DailyLogHistory from "@/components/DailyLogHistory";
+import { useDailyLog } from "@/hooks/useDailyLog";
 
 const Index = () => {
+  const { logs, todayLog, submitMedication, submitHealthData } = useDailyLog();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Activity className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">HealthTrack</h1>
+            <p className="text-xs text-muted-foreground">Daily health monitor</p>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
+        {/* Today's date */}
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
+
+        {/* Medication check */}
+        <MedicationCheck
+          onSubmit={submitMedication}
+          submitted={todayLog?.medicationTaken !== undefined}
+          lastAnswer={todayLog?.medicationTaken}
+        />
+
+        {/* Health data entry */}
+        <HealthDataEntry
+          onSubmit={submitHealthData}
+          submitted={todayLog?.steps !== undefined}
+          lastSteps={todayLog?.steps}
+          lastSleep={todayLog?.sleepHours}
+        />
+
+        {/* History */}
+        <DailyLogHistory logs={logs} />
+      </main>
     </div>
   );
 };
