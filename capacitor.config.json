@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.6bee0e7d307847cbb97f5e0819b5156a",
+  "appName": "HealthTrack",
+  "webDir": "dist",
+  "server": {
+    "url": "https://6bee0e7d-3078-47cb-b97f-5e0819b5156a.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
