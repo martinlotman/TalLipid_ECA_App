@@ -5,6 +5,15 @@ const STORAGE_KEY = "health-daily-logs";
 
 const getTodayStr = () => new Date().toISOString().split("T")[0];
 
+export interface HealthData {
+  steps: number;
+  sleepHours: number;
+  heartRate: number;
+  spo2: number;
+  stressLevel: number;
+  syncSource: "watch" | "manual";
+}
+
 export function useDailyLog() {
   const [logs, setLogs] = useState<DailyLog[]>(() => {
     try {
@@ -34,15 +43,15 @@ export function useDailyLog() {
     });
   };
 
-  const submitHealthData = (steps: number, sleepHours: number) => {
+  const submitHealthData = (data: HealthData) => {
     setLogs((prev) => {
       const existing = prev.find((l) => l.date === today);
       if (existing) {
         return prev.map((l) =>
-          l.date === today ? { ...l, steps, sleepHours } : l
+          l.date === today ? { ...l, ...data } : l
         );
       }
-      return [{ date: today, steps, sleepHours, synced: false }, ...prev];
+      return [{ date: today, ...data, synced: false }, ...prev];
     });
   };
 
