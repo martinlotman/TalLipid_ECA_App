@@ -1,108 +1,146 @@
-import { MessageCircle, Mic, Send } from "lucide-react";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mic, MicOff, Volume2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ecaAvatar from "@/assets/eca-avatar.png";
 
-interface Message {
-  id: number;
-  text: string;
-  sender: "agent" | "user";
-}
+type AgentState = "idle" | "listening" | "thinking" | "speaking";
 
 const ConversationalAgent = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hi! I'm your health assistant. How are you feeling today?",
-      sender: "agent",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [agentState, setAgentState] = useState<AgentState>("idle");
+  const [caption, setCaption] = useState("Tap the mic to start talking");
+  const [mouthOpen, setMouthOpen] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { id: Date.now(), text: input, sender: "user" };
-    setMessages((prev) => [
-      ...prev,
-      userMsg,
-      {
-        id: Date.now() + 1,
-        text: "Thanks for sharing! This is a mockup — the conversational agent backend will be connected soon.",
-        sender: "agent",
-      },
-    ]);
-    setInput("");
-  };
+  // Simulate lip-sync animation when speaking
+  useEffect(() => {
+    if (agentState !== "speaking") {
+      setMouthOpen(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      setMouthOpen((prev) => !prev);
+    }, 120 + Math.random() * 100);
+    return () => clearInterval(interval);
+  }, [agentState]);
+
+  const handleMicPress = useCallback(() => {
+    if (agentState === "idle") {
+      setAgentState("listening");
+      setCaption("Listening…");
+      // Simulate: after 3s switch to thinking, then speaking
+      setTimeout(() => {
+        setAgentState("thinking");
+        setCaption("Thinking…");
+        setTimeout(() => {
+          setAgentState("speaking");
+          setCaption(
+            "Remember to take your evening medication with a full glass of water."
+          );
+          setTimeout(() => {
+            setAgentState("idle");
+            setCaption("Tap the mic to start talking");
+          }, 4000);
+        }, 1500);
+      }, 3000);
+    } else {
+      setAgentState("idle");
+      setCaption("Tap the mic to start talking");
+    }
+  }, [agentState]);
+
+  const isActive = agentState !== "idle";
 
   return (
     <Card className="overflow-hidden border-primary/20">
-      <CardHeader
-        className="cursor-pointer p-4"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <CardContent className="flex flex-col items-center gap-4 p-5">
+        {/* Avatar with lip-sync overlay */}
+        <div className="relative">
+          {/* Glow ring when active */}
+          <div
+            className={`absolute -inset-2 rounded-full transition-all duration-500 ${
+              agentState === "speaking"
+                ? "animate-pulse bg-primary/20"
+                : agentState === "listening"
+                  ? "animate-pulse bg-accent/30"
+                  : "bg-transparent"
+            }`}
+          />
+
+          {/* Avatar container */}
+          <div className="relative h-32 w-32 overflow-hidden rounded-full border-[3px] border-primary/30 shadow-lg">
             <img
               src={ecaAvatar}
               alt="Health assistant avatar"
-              className="h-12 w-12 rounded-full border-2 border-primary/30 object-cover"
+              className="h-full w-full object-cover"
             />
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-success" />
-          </div>
-          <div className="flex-1">
-            <CardTitle className="text-sm">Health Assistant</CardTitle>
-            <p className="text-xs text-muted-foreground">Online • Tap to chat</p>
-          </div>
-          <MessageCircle className="h-5 w-5 text-primary" />
-        </div>
-      </CardHeader>
 
-      {isExpanded && (
-        <CardContent className="space-y-3 p-4 pt-0">
-          {/* Chat messages */}
-          <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg bg-muted/30 p-3">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
+            {/* Lip-sync overlay — semi-transparent mouth movement */}
+            {agentState === "speaking" && (
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-center">
                 <div
-                  className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${
-                    msg.sender === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-card-foreground shadow-sm"
-                  }`}
-                >
-                  {msg.text}
-                </div>
+                  className="rounded-t-full bg-[hsl(var(--foreground)/0.08)] backdrop-blur-[1px] transition-all duration-100"
+                  style={{
+                    width: mouthOpen ? "28px" : "18px",
+                    height: mouthOpen ? "14px" : "5px",
+                  }}
+                />
               </div>
-            ))}
+            )}
           </div>
 
-          {/* Input */}
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" className="shrink-0" disabled>
-              <Mic className="h-4 w-4" />
-            </Button>
-            <Input
-              placeholder="Type a message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="text-sm"
-            />
-            <Button size="icon" className="shrink-0" onClick={handleSend}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-center text-[10px] text-muted-foreground">
-            Mockup — ECA backend integration pending
+          {/* Status indicator */}
+          <span
+            className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-card transition-colors ${
+              agentState === "idle"
+                ? "bg-muted-foreground"
+                : agentState === "listening"
+                  ? "bg-destructive animate-pulse"
+                  : "bg-success"
+            }`}
+          />
+        </div>
+
+        {/* State label */}
+        <div className="flex items-center gap-2">
+          {agentState === "speaking" && (
+            <Volume2 className="h-4 w-4 animate-pulse text-primary" />
+          )}
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {agentState === "idle"
+              ? "Health Assistant"
+              : agentState === "listening"
+                ? "Listening"
+                : agentState === "thinking"
+                  ? "Thinking"
+                  : "Speaking"}
+          </span>
+        </div>
+
+        {/* Caption / transcript bubble */}
+        <div className="w-full rounded-xl bg-muted/40 px-4 py-3 text-center">
+          <p className="text-sm leading-relaxed text-foreground/80">
+            {caption}
           </p>
-        </CardContent>
-      )}
+        </div>
+
+        {/* Mic button */}
+        <Button
+          variant={isActive ? "destructive" : "default"}
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-md"
+          onClick={handleMicPress}
+        >
+          {isActive ? (
+            <MicOff className="h-6 w-6" />
+          ) : (
+            <Mic className="h-6 w-6" />
+          )}
+        </Button>
+
+        <p className="text-center text-[10px] text-muted-foreground">
+          Mockup — lip-sync service integration pending
+        </p>
+      </CardContent>
     </Card>
   );
 };
