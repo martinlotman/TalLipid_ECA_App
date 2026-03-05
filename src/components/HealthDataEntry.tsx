@@ -23,13 +23,13 @@ interface HealthDataEntryProps {
   todayLog?: DailyLog;
 }
 
-const METRICS = [
-  { key: "steps", label: "Steps", icon: Footprints, unit: "", placeholder: "e.g. 8500", type: "number" },
-  { key: "heartRate", label: "Heart Rate", icon: Heart, unit: "bpm", placeholder: "e.g. 72", type: "number" },
-  { key: "spo2", label: "Blood Oxygen", icon: Activity, unit: "%", placeholder: "e.g. 97", type: "number" },
-  { key: "stressLevel", label: "Stress Level", icon: Brain, unit: "/100", placeholder: "e.g. 35", type: "number" },
+const METRICS: { key: string; label: string; icon: typeof Footprints; unit: string; placeholder: string; step?: string }[] = [
+  { key: "steps", label: "Steps", icon: Footprints, unit: "", placeholder: "e.g. 8500" },
+  { key: "heartRate", label: "Heart Rate", icon: Heart, unit: "bpm", placeholder: "e.g. 72" },
+  { key: "spo2", label: "Blood Oxygen", icon: Activity, unit: "%", placeholder: "e.g. 97" },
+  { key: "stressLevel", label: "Stress Level", icon: Brain, unit: "/100", placeholder: "e.g. 35" },
   { key: "sleepHours", label: "Sleep", icon: Moon, unit: "hrs", placeholder: "e.g. 7.5", step: "0.5" },
-] as const;
+];
 
 const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps) => {
   const [mode, setMode] = useState<"idle" | "syncing" | "manual">("idle");

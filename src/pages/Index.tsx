@@ -46,8 +46,7 @@ const Index = () => {
         <HealthDataEntry
           onSubmit={submitHealthData}
           submitted={todayLog?.steps !== undefined}
-          lastSteps={todayLog?.steps}
-          lastSleep={todayLog?.sleepHours}
+          todayLog={todayLog}
         />
 
         {/* Conversational Agent */}
