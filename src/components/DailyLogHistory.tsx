@@ -1,12 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, X, Footprints, Moon } from "lucide-react";
+import { Check, X, Footprints, Moon, Heart, Activity } from "lucide-react";
 
 export interface DailyLog {
   date: string;
   medicationTaken?: boolean;
   steps?: number;
   sleepHours?: number;
+  heartRate?: number;
+  spo2?: number;
+  stressLevel?: number;
   synced: boolean;
+  syncSource?: "watch" | "manual";
 }
 
 interface DailyLogHistoryProps {
@@ -43,11 +47,23 @@ const DailyLogHistory = ({ logs }: DailyLogHistoryProps) => {
                   day: "numeric",
                 })}
               </p>
-              <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 {log.steps !== undefined && (
                   <span className="flex items-center gap-1">
                     <Footprints className="h-3 w-3" />
                     {log.steps.toLocaleString()}
+                  </span>
+                )}
+                {log.heartRate !== undefined && (
+                  <span className="flex items-center gap-1">
+                    <Heart className="h-3 w-3" />
+                    {log.heartRate}
+                  </span>
+                )}
+                {log.spo2 !== undefined && (
+                  <span className="flex items-center gap-1">
+                    <Activity className="h-3 w-3" />
+                    {log.spo2}%
                   </span>
                 )}
                 {log.sleepHours !== undefined && (
@@ -59,6 +75,11 @@ const DailyLogHistory = ({ logs }: DailyLogHistoryProps) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {log.syncSource && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  {log.syncSource === "watch" ? "⌚ Watch" : "✍️ Manual"}
+                </span>
+              )}
               {log.medicationTaken !== undefined && (
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full ${
