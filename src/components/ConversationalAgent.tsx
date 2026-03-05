@@ -2,24 +2,22 @@ import { Mic, MicOff, Volume2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import ecaAvatar from "@/assets/eca-avatar.png";
+import ecaIdle from "@/assets/eca-avatar.png";
+import ecaSpeaking from "@/assets/eca-avatar-speaking.png";
 
 type AgentState = "idle" | "listening" | "thinking" | "speaking";
 
 const ConversationalAgent = () => {
   const [agentState, setAgentState] = useState<AgentState>("idle");
   const [caption, setCaption] = useState("Tap the mic to start talking");
-  const [mouthOpen, setMouthOpen] = useState(false);
+  const [frame, setFrame] = useState(0);
 
-  // Simulate lip-sync animation when speaking
+  // Animate between the two frames to simulate a .gif
   useEffect(() => {
-    if (agentState !== "speaking") {
-      setMouthOpen(false);
-      return;
-    }
+    const speed = agentState === "speaking" ? 600 : 2000;
     const interval = setInterval(() => {
-      setMouthOpen((prev) => !prev);
-    }, 120 + Math.random() * 100);
+      setFrame((f) => (f + 1) % 2);
+    }, speed);
     return () => clearInterval(interval);
   }, [agentState]);
 
@@ -27,7 +25,6 @@ const ConversationalAgent = () => {
     if (agentState === "idle") {
       setAgentState("listening");
       setCaption("Listening…");
-      // Simulate: after 3s switch to thinking, then speaking
       setTimeout(() => {
         setAgentState("thinking");
         setCaption("Thinking…");
@@ -49,15 +46,16 @@ const ConversationalAgent = () => {
   }, [agentState]);
 
   const isActive = agentState !== "idle";
+  const currentImage = frame === 0 ? ecaIdle : ecaSpeaking;
 
   return (
     <Card className="overflow-hidden border-primary/20">
       <CardContent className="flex flex-col items-center gap-4 p-5">
-        {/* Avatar with lip-sync overlay */}
+        {/* Square avatar container with animated .gif-like effect */}
         <div className="relative">
-          {/* Glow ring when active */}
+          {/* Glow behind avatar */}
           <div
-            className={`absolute -inset-2 rounded-full transition-all duration-500 ${
+            className={`absolute -inset-2 rounded-2xl transition-all duration-500 ${
               agentState === "speaking"
                 ? "animate-pulse bg-primary/20"
                 : agentState === "listening"
@@ -66,31 +64,33 @@ const ConversationalAgent = () => {
             }`}
           />
 
-          {/* Avatar container */}
-          <div className="relative h-32 w-32 overflow-hidden rounded-full border-[3px] border-primary/30 shadow-lg">
+          <div
+            className="relative h-40 w-40 overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg"
+            style={{
+              animation:
+                agentState === "speaking"
+                  ? "avatar-bob 0.6s ease-in-out infinite"
+                  : "avatar-breathe 3s ease-in-out infinite",
+            }}
+          >
+            {/* Crossfade between two images */}
             <img
-              src={ecaAvatar}
-              alt="Health assistant avatar"
-              className="h-full w-full object-cover"
+              src={ecaIdle}
+              alt="Health assistant"
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+              style={{ opacity: frame === 0 ? 1 : 0 }}
             />
-
-            {/* Lip-sync overlay — semi-transparent mouth movement */}
-            {agentState === "speaking" && (
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-center">
-                <div
-                  className="rounded-t-full bg-[hsl(var(--foreground)/0.08)] backdrop-blur-[1px] transition-all duration-100"
-                  style={{
-                    width: mouthOpen ? "28px" : "18px",
-                    height: mouthOpen ? "14px" : "5px",
-                  }}
-                />
-              </div>
-            )}
+            <img
+              src={ecaSpeaking}
+              alt="Health assistant speaking"
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+              style={{ opacity: frame === 1 ? 1 : 0 }}
+            />
           </div>
 
-          {/* Status indicator */}
+          {/* Status dot */}
           <span
-            className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-card transition-colors ${
+            className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card transition-colors ${
               agentState === "idle"
                 ? "bg-muted-foreground"
                 : agentState === "listening"
@@ -116,11 +116,9 @@ const ConversationalAgent = () => {
           </span>
         </div>
 
-        {/* Caption / transcript bubble */}
+        {/* Caption */}
         <div className="w-full rounded-xl bg-muted/40 px-4 py-3 text-center">
-          <p className="text-sm leading-relaxed text-foreground/80">
-            {caption}
-          </p>
+          <p className="text-sm leading-relaxed text-foreground/80">{caption}</p>
         </div>
 
         {/* Mic button */}
@@ -130,11 +128,7 @@ const ConversationalAgent = () => {
           className="h-14 w-14 rounded-full shadow-md"
           onClick={handleMicPress}
         >
-          {isActive ? (
-            <MicOff className="h-6 w-6" />
-          ) : (
-            <Mic className="h-6 w-6" />
-          )}
+          {isActive ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
         </Button>
 
         <p className="text-center text-[10px] text-muted-foreground">
