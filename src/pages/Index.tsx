@@ -2,6 +2,7 @@ import { Activity } from "lucide-react";
 import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
+import ConversationalAgent from "@/components/ConversationalAgent";
 import { useDailyLog } from "@/hooks/useDailyLog";
 
 const Index = () => {
@@ -48,6 +49,9 @@ const Index = () => {
           lastSteps={todayLog?.steps}
           lastSleep={todayLog?.sleepHours}
         />
+
+        {/* Conversational Agent */}
+        <ConversationalAgent />
 
         {/* History */}
         <DailyLogHistory logs={logs} />
