@@ -50,7 +50,7 @@ const ConversationalAgent = () => {
               alt="Health assistant avatar"
               className="h-12 w-12 rounded-full border-2 border-primary/30 object-cover"
             />
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-emerald-400" />
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-success" />
           </div>
           <div className="flex-1">
             <CardTitle className="text-sm">Health Assistant</CardTitle>

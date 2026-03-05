@@ -50,6 +50,9 @@ const Index = () => {
           lastSleep={todayLog?.sleepHours}
         />
 
+        {/* Conversational Agent */}
+        <ConversationalAgent />
+
         {/* History */}
         <DailyLogHistory logs={logs} />
       </main>
