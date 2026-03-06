@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          heart_rate: number | null
+          id: string
+          medication_taken: boolean | null
+          sleep_hours: number | null
+          spo2: number | null
+          steps: number | null
+          stress_level: number | null
+          sync_source: string | null
+          synced_to_redcap: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          heart_rate?: number | null
+          id?: string
+          medication_taken?: boolean | null
+          sleep_hours?: number | null
+          spo2?: number | null
+          steps?: number | null
+          stress_level?: number | null
+          sync_source?: string | null
+          synced_to_redcap?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          heart_rate?: number | null
+          id?: string
+          medication_taken?: boolean | null
+          sleep_hours?: number | null
+          spo2?: number | null
+          steps?: number | null
+          stress_level?: number | null
+          sync_source?: string | null
+          synced_to_redcap?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
