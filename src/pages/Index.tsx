@@ -3,6 +3,7 @@ import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
 import ConversationalAgent from "@/components/ConversationalAgent";
+import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
 
 const Index = () => {
