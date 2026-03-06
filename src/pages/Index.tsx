@@ -36,6 +36,9 @@ const Index = () => {
           })}
         </p>
 
+        {/* Notification banner */}
+        <NotificationBanner />
+
         {/* Medication check */}
         <MedicationCheck
           onSubmit={submitMedication}
