@@ -1,1 +1,4 @@
 project_id = "fcqqiertbkbicddgluud"
+
+[functions.redcap-weekly-sync]
+verify_jwt = false
