@@ -20,101 +20,135 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get logs from the past 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const fromDate = sevenDaysAgo.toISOString().split("T")[0];
+    // Check if a specific user_id was passed (manual trigger)
+    let targetUserId: string | null = null;
+    try {
+      const body = await req.json();
+      targetUserId = body?.user_id ?? null;
+    } catch { /* no body = sync all eligible */ }
 
-    const { data: logs, error } = await supabase
-      .from("daily_logs")
-      .select("*")
-      .gte("date", fromDate)
-      .order("date", { ascending: true });
+    // Get all profiles that are due for sync
+    const now = new Date();
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, redcap_record_id, sync_interval_days, last_synced_at");
 
-    if (error) throw error;
+    if (profilesError) throw profilesError;
 
-    const totalDays = logs?.length ?? 0;
-
-    // Calculate metrics
-    let medTakenDays = 0;
-    let medNotTakenDays = 0;
-    let noMarkDays = 0;
-    let totalSteps = 0;
-    let stepsCount = 0;
-    let totalSleep = 0;
-    let sleepCount = 0;
-
-    for (const log of logs ?? []) {
-      if (log.medication_taken === true) medTakenDays++;
-      else if (log.medication_taken === false) medNotTakenDays++;
-      else noMarkDays++;
-
-      if (log.steps != null) {
-        totalSteps += log.steps;
-        stepsCount++;
-      }
-      if (log.sleep_hours != null) {
-        totalSleep += Number(log.sleep_hours);
-        sleepCount++;
-      }
-    }
-
-    // Days in the week with no log entry at all also count as "no mark"
-    noMarkDays += 7 - totalDays;
-
-    const avgSteps = stepsCount > 0 ? Math.round(totalSteps / stepsCount) : 0;
-    const avgSleep =
-      sleepCount > 0 ? parseFloat((totalSleep / sleepCount).toFixed(1)) : 0;
-
-    const today = new Date().toISOString().split("T")[0];
-
-    // Build REDCap import payload
-    const record = {
-      record_id: `weekly_${today}`,
-      date_visit_w2d: today,
-      med_yes_w2d: String(medTakenDays),
-      med_no_w2d_2: String(medNotTakenDays),
-      no_mark_1_w2d: String(noMarkDays),
-      avg_steps_w2d: String(avgSteps),
-      avg_sleep_w2d: String(avgSleep),
-    };
-
-    // POST to REDCap
-    const formData = new FormData();
-    formData.append("token", redcapApiKey);
-    formData.append("content", "record");
-    formData.append("format", "json");
-    formData.append("type", "flat");
-    formData.append("overwriteBehavior", "normal");
-    formData.append("data", JSON.stringify([record]));
-    formData.append("returnContent", "count");
-    formData.append("returnFormat", "json");
-
-    const redcapResponse = await fetch(`${redcapApiUrl}api/`, {
-      method: "POST",
-      body: formData,
+    const eligibleProfiles = (profiles ?? []).filter((p: any) => {
+      if (!p.redcap_record_id) return false; // skip users without REDCap ID
+      if (targetUserId) return p.id === targetUserId; // manual trigger for specific user
+      if (!p.last_synced_at) return true; // never synced
+      const lastSync = new Date(p.last_synced_at);
+      const daysSince = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60 * 24);
+      return daysSince >= (p.sync_interval_days ?? 7);
     });
 
-    const redcapResult = await redcapResponse.text();
+    const results: any[] = [];
 
-    if (!redcapResponse.ok) {
-      console.error("REDCap error:", redcapResult);
-      throw new Error(`REDCap returned ${redcapResponse.status}: ${redcapResult}`);
-    }
+    for (const profile of eligibleProfiles) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - (profile.sync_interval_days ?? 7));
+      const fromDate = sevenDaysAgo.toISOString().split("T")[0];
 
-    // Mark logs as synced
-    if (logs && logs.length > 0) {
-      const ids = logs.map((l: any) => l.id);
-      await supabase
+      const { data: logs, error } = await supabase
         .from("daily_logs")
-        .update({ synced_to_redcap: true })
-        .in("id", ids);
-    }
+        .select("*")
+        .eq("user_id", profile.id)
+        .gte("date", fromDate)
+        .order("date", { ascending: true });
 
-    console.log("REDCap sync success:", redcapResult, "Record:", record);
+      if (error) {
+        console.error(`Error fetching logs for user ${profile.id}:`, error);
+        results.push({ user_id: profile.id, error: error.message });
+        continue;
+      }
+
+      const totalDays = logs?.length ?? 0;
+      let medTakenDays = 0;
+      let medNotTakenDays = 0;
+      let noMarkDays = 0;
+      let totalSteps = 0;
+      let stepsCount = 0;
+      let totalSleep = 0;
+      let sleepCount = 0;
+
+      for (const log of logs ?? []) {
+        if (log.medication_taken === true) medTakenDays++;
+        else if (log.medication_taken === false) medNotTakenDays++;
+        else noMarkDays++;
+
+        if (log.steps != null) {
+          totalSteps += log.steps;
+          stepsCount++;
+        }
+        if (log.sleep_hours != null) {
+          totalSleep += Number(log.sleep_hours);
+          sleepCount++;
+        }
+      }
+
+      const interval = profile.sync_interval_days ?? 7;
+      noMarkDays += interval - totalDays;
+
+      const avgSteps = stepsCount > 0 ? Math.round(totalSteps / stepsCount) : 0;
+      const avgSleep = sleepCount > 0 ? parseFloat((totalSleep / sleepCount).toFixed(1)) : 0;
+
+      const today = now.toISOString().split("T")[0];
+
+      const record = {
+        record_id: profile.redcap_record_id,
+        date_visit_w2d: today,
+        med_yes_w2d: String(medTakenDays),
+        med_no_w2d_2: String(medNotTakenDays),
+        no_mark_1_w2d: String(noMarkDays),
+        avg_steps_w2d: String(avgSteps),
+        avg_sleep_w2d: String(avgSleep),
+      };
+
+      const formData = new FormData();
+      formData.append("token", redcapApiKey);
+      formData.append("content", "record");
+      formData.append("format", "json");
+      formData.append("type", "flat");
+      formData.append("overwriteBehavior", "normal");
+      formData.append("data", JSON.stringify([record]));
+      formData.append("returnContent", "count");
+      formData.append("returnFormat", "json");
+
+      const redcapResponse = await fetch(`${redcapApiUrl}api/`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const redcapResult = await redcapResponse.text();
+
+      if (!redcapResponse.ok) {
+        console.error(`REDCap error for user ${profile.id}:`, redcapResult);
+        results.push({ user_id: profile.id, error: redcapResult });
+        continue;
+      }
+
+      // Mark logs as synced & update last_synced_at
+      if (logs && logs.length > 0) {
+        const ids = logs.map((l: any) => l.id);
+        await supabase
+          .from("daily_logs")
+          .update({ synced_to_redcap: true })
+          .in("id", ids);
+      }
+
+      await supabase
+        .from("profiles")
+        .update({ last_synced_at: now.toISOString() })
+        .eq("id", profile.id);
+
+      console.log(`Synced user ${profile.id} (REDCap ID: ${profile.redcap_record_id}):`, record);
+      results.push({ user_id: profile.id, record, redcapResult });
+    }
 
     return new Response(
-      JSON.stringify({ success: true, record, redcapResult }),
+      JSON.stringify({ success: true, synced: results.length, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

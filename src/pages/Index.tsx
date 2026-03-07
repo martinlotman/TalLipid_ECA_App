@@ -1,12 +1,15 @@
-import { Activity } from "lucide-react";
+import { Activity, LogOut } from "lucide-react";
 import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
 import ConversationalAgent from "@/components/ConversationalAgent";
 import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const { logs, todayLog, submitMedication, submitHealthData } = useDailyLog();
 
   return (
@@ -17,10 +20,13 @@ const Index = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Activity className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">HealthTrack</h1>
-            <p className="text-xs text-muted-foreground">Daily health monitor</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </header>
 
