@@ -1,12 +1,15 @@
-import { Activity } from "lucide-react";
+import { Activity, LogOut } from "lucide-react";
 import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
 import ConversationalAgent from "@/components/ConversationalAgent";
 import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const { logs, todayLog, submitMedication, submitHealthData } = useDailyLog();
 
   return (

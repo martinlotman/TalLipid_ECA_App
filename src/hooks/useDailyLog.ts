@@ -1,6 +1,6 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/components/DailyLogHistory";
 
 export interface HealthData {
@@ -16,13 +16,15 @@ const getTodayStr = () => new Date().toISOString().split("T")[0];
 
 export function useDailyLog() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
+  const { user } = useAuth();
 
-  // Load logs from DB on mount
   useEffect(() => {
+    if (!user) return;
     const fetchLogs = async () => {
       const { data, error } = await supabase
         .from("daily_logs")
         .select("*")
+        .eq("user_id", user.id)
         .order("date", { ascending: false })
         .limit(30);
 
@@ -43,24 +45,26 @@ export function useDailyLog() {
       }
     };
     fetchLogs();
-  }, []);
+  }, [user]);
 
   const today = getTodayStr();
   const todayLog = logs.find((l) => l.date === today);
 
   const upsertToDb = useCallback(async (fields: Record<string, any>) => {
+    if (!user) return;
     const { data: existing } = await supabase
       .from("daily_logs")
       .select("id")
       .eq("date", today)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (existing) {
       await supabase.from("daily_logs").update(fields).eq("id", existing.id);
     } else {
-      await supabase.from("daily_logs").insert({ date: today, ...fields });
+      await supabase.from("daily_logs").insert({ date: today, user_id: user.id, ...fields });
     }
-  }, [today]);
+  }, [today, user]);
 
   const submitMedication = useCallback(
     async (taken: boolean) => {
