@@ -20,10 +20,13 @@ const Index = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Activity className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">HealthTrack</h1>
-            <p className="text-xs text-muted-foreground">Daily health monitor</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </header>
 
