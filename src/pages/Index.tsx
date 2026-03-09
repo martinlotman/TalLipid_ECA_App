@@ -41,6 +41,9 @@ const Index = () => {
               <Shield className="h-4 w-4" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title="Watch Setup">
+            <Watch className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
