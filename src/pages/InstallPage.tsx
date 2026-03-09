@@ -72,7 +72,7 @@ const InstallPage = () => {
                 <Download className="h-7 w-7 text-primary" />
               </div>
               <p className="text-center font-medium text-foreground">
-                HealthTrack is installed!
+                TalLipid is installed!
               </p>
               <p className="text-center text-sm text-muted-foreground">
                 Open it from your home screen.
