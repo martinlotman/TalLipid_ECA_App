@@ -1,4 +1,6 @@
-import { Activity, LogOut } from "lucide-react";
+import { Activity, LogOut, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
@@ -6,11 +8,21 @@ import ConversationalAgent from "@/components/ConversationalAgent";
 import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const { logs, todayLog, submitMedication, submitHealthData } = useDailyLog();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
+      setIsAdmin(!!data);
+    });
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,6 +36,11 @@ const Index = () => {
             <h1 className="text-lg font-bold text-foreground">HealthTrack</h1>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
+          {isAdmin && (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} title="Admin">
+              <Shield className="h-4 w-4" />
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
