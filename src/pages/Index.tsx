@@ -33,7 +33,7 @@ const Index = () => {
             <Activity className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">HealthTrack</h1>
+            <h1 className="text-lg font-bold text-foreground">TalLipid</h1>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
           {isAdmin && (

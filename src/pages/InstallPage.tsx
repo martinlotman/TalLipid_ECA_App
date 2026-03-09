@@ -89,7 +89,7 @@ const InstallPage = () => {
                 onClick={handleInstall}
               >
                 <Download className="h-5 w-5" />
-                Install HealthTrack
+                Install TalLipid
               </Button>
             )}
 
