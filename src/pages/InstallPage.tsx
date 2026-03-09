@@ -58,9 +58,9 @@ const InstallPage = () => {
             className="h-24 w-24 rounded-2xl shadow-lg"
           />
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground">HealthTrack</h1>
+            <h1 className="text-2xl font-bold text-foreground">TalLipid</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Daily Health Monitor
+              Lipid Medication Monitor
             </p>
           </div>
         </div>
