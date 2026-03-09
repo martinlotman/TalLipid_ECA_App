@@ -54,13 +54,13 @@ const InstallPage = () => {
         <div className="flex flex-col items-center gap-4">
           <img
             src="/pwa-icon-512.png"
-            alt="HealthTrack"
+            alt="TalLipid"
             className="h-24 w-24 rounded-2xl shadow-lg"
           />
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground">HealthTrack</h1>
+            <h1 className="text-2xl font-bold text-foreground">TalLipid</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Daily Health Monitor
+              Lipid Medication Monitor
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ const InstallPage = () => {
                 <Download className="h-7 w-7 text-primary" />
               </div>
               <p className="text-center font-medium text-foreground">
-                HealthTrack is installed!
+                TalLipid is installed!
               </p>
               <p className="text-center text-sm text-muted-foreground">
                 Open it from your home screen.
@@ -89,7 +89,7 @@ const InstallPage = () => {
                 onClick={handleInstall}
               >
                 <Download className="h-5 w-5" />
-                Install HealthTrack
+                Install TalLipid
               </Button>
             )}
 

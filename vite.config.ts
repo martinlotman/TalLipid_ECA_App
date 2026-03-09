@@ -19,9 +19,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
       manifest: {
-        name: "HealthTrack - Daily Health Monitor",
-        short_name: "HealthTrack",
-        description: "Track medications, steps, and sleep. Sync to REDCap.",
+        name: "TalLipid - Lipid Medication Monitor",
+        short_name: "TalLipid",
+        description: "Track lipid medications, steps, and sleep. Sync to REDCap.",
         theme_color: "#0d9488",
         background_color: "#0f172a",
         display: "standalone",
