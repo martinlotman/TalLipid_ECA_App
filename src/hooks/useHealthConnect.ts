@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import type { HealthData } from "@/hooks/useDailyLog";
 
-// Dynamic import so the web build doesn't crash
 let HealthPlugin: any = null;
 
 async function getHealthPlugin() {
@@ -17,6 +16,7 @@ async function getHealthPlugin() {
 }
 
 const isNative = Capacitor.isNativePlatform();
+const platform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
 
 export function useHealthConnect() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,11 @@ export function useHealthConnect() {
     setError(null);
 
     if (!isNative) {
-      setError("Health Connect is only available on Android devices with the native app.");
+      setError(
+        platform === "ios"
+          ? "Health sync requires the native iOS app with Apple Health access."
+          : "Health sync requires the native Android app with Health Connect installed."
+      );
       setLoading(false);
       return null;
     }
@@ -37,7 +41,7 @@ export function useHealthConnect() {
     try {
       const Health = await getHealthPlugin();
       if (!Health) {
-        setError("Health Connect plugin not available.");
+        setError("Health plugin not available.");
         setLoading(false);
         return null;
       }
@@ -45,18 +49,22 @@ export function useHealthConnect() {
       // Check availability
       const { available } = await Health.isAvailable();
       if (!available) {
-        setError("Health Connect is not available on this device. Please install Google Health Connect.");
+        setError(
+          platform === "ios"
+            ? "Apple Health is not available on this device."
+            : "Health Connect is not available on this device. Please install Google Health Connect."
+        );
         setLoading(false);
         return null;
       }
 
-      // Request permissions
+      // Request permissions — same API for both platforms
       await Health.requestAuthorization({
         read: ["steps", "heartRate"],
         write: [],
       });
 
-      // Query last 24 hours
+      // Query today's data
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startDate = startOfDay.toISOString();
@@ -86,15 +94,15 @@ export function useHealthConnect() {
           endDate,
         });
         if (hrResult?.samples?.length) {
-          const avg = hrResult.samples.reduce((sum: number, s: any) => sum + (s.value || 0), 0) / hrResult.samples.length;
+          const avg =
+            hrResult.samples.reduce((sum: number, s: any) => sum + (s.value || 0), 0) /
+            hrResult.samples.length;
           heartRate = Math.round(avg);
         }
       } catch {
         console.warn("Could not read heart rate");
       }
 
-      // Note: SpO2, stress, and sleep are not available in @capgo/capacitor-health
-      // These will need manual entry or a more comprehensive plugin
       const healthData: HealthData = {
         steps,
         heartRate,
@@ -107,12 +115,12 @@ export function useHealthConnect() {
       setLoading(false);
       return healthData;
     } catch (err: any) {
-      console.error("Health Connect sync error:", err);
-      setError(err?.message || "Failed to sync from Health Connect.");
+      console.error("Health sync error:", err);
+      setError(err?.message || "Failed to sync health data.");
       setLoading(false);
       return null;
     }
   }, []);
 
-  return { syncFromWatch, loading, error, isAvailable };
+  return { syncFromWatch, loading, error, isAvailable, platform };
 }
