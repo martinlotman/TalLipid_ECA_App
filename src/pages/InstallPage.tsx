@@ -54,7 +54,7 @@ const InstallPage = () => {
         <div className="flex flex-col items-center gap-4">
           <img
             src="/pwa-icon-512.png"
-            alt="HealthTrack"
+            alt="TalLipid"
             className="h-24 w-24 rounded-2xl shadow-lg"
           />
           <div className="text-center">
