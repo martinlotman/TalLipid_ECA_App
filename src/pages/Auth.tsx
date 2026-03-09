@@ -32,7 +32,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            data: { full_name: fullName },
+            data: { first_name: firstName, redcap_record_id: redcapRecordId },
             emailRedirectTo: window.location.origin,
           },
         });
