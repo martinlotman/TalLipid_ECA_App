@@ -52,15 +52,15 @@ const Index = () => {
           lastAnswer={todayLog?.medicationTaken}
         />
 
+        {/* Conversational Agent */}
+        <ConversationalAgent />
+
         {/* Health data entry */}
         <HealthDataEntry
           onSubmit={submitHealthData}
           submitted={todayLog?.steps !== undefined}
           todayLog={todayLog}
         />
-
-        {/* Conversational Agent */}
-        <ConversationalAgent />
 
         {/* History */}
         <DailyLogHistory logs={logs} />
