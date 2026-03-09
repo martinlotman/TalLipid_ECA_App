@@ -1,4 +1,6 @@
-import { Activity, LogOut } from "lucide-react";
+import { Activity, LogOut, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
 import HealthDataEntry from "@/components/HealthDataEntry";
 import DailyLogHistory from "@/components/DailyLogHistory";
@@ -6,6 +8,7 @@ import ConversationalAgent from "@/components/ConversationalAgent";
 import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
