@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
+import WatchSetup from "./pages/WatchSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
