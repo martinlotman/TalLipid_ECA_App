@@ -265,7 +265,7 @@ const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps
         </Button>
         {!hcAvailable && (
           <p className="text-center text-[10px] text-muted-foreground">
-            Watch sync requires the native Android app with Health Connect installed
+            Watch sync requires the native app with Health Connect (Android) or Apple Health (iOS)
           </p>
         )}
         <Button
