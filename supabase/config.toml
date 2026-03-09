@@ -2,3 +2,6 @@ project_id = "fcqqiertbkbicddgluud"
 
 [functions.redcap-weekly-sync]
 verify_jwt = false
+
+[functions.health-chat]
+verify_jwt = false
