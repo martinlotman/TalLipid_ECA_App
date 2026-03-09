@@ -1,4 +1,4 @@
-import { Activity, LogOut, Shield } from "lucide-react";
+import { Activity, LogOut, Shield, Watch } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
@@ -41,6 +41,9 @@ const Index = () => {
               <Shield className="h-4 w-4" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title="Watch Setup">
+            <Watch className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
