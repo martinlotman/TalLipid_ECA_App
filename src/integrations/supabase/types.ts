@@ -63,7 +63,7 @@ export type Database = {
         Row: {
           created_at: string
           enrolled_at: string
-          full_name: string | null
+          first_name: string | null
           id: string
           last_synced_at: string | null
           redcap_record_id: string | null
@@ -72,7 +72,7 @@ export type Database = {
         Insert: {
           created_at?: string
           enrolled_at?: string
-          full_name?: string | null
+          first_name?: string | null
           id: string
           last_synced_at?: string | null
           redcap_record_id?: string | null
@@ -81,7 +81,7 @@ export type Database = {
         Update: {
           created_at?: string
           enrolled_at?: string
-          full_name?: string | null
+          first_name?: string | null
           id?: string
           last_synced_at?: string | null
           redcap_record_id?: string | null

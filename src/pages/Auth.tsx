@@ -12,7 +12,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [redcapRecordId, setRedcapRecordId] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -31,7 +32,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            data: { full_name: fullName },
+            data: { first_name: firstName, redcap_record_id: redcapRecordId },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -67,15 +68,28 @@ const Auth = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required={!isLogin}
+                    placeholder="How the avatar will address you"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="redcapRecordId">REDCap Record ID</Label>
+                  <Input
+                    id="redcapRecordId"
+                    value={redcapRecordId}
+                    onChange={(e) => setRedcapRecordId(e.target.value)}
+                    required={!isLogin}
+                    placeholder="From your REDCap onboarding"
+                  />
+                </div>
+              </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
