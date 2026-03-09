@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export type ChatMessage = {
@@ -11,29 +12,54 @@ export type ChatMessage = {
  * Avatar service adapter interface.
  * When the external video-stream avatar is ready, implement this interface
  * and pass it to useHealthChat via setAvatarAdapter().
- *
- * Example adapters: D-ID, HeyGen, Simli
  */
 export interface AvatarAdapter {
-  /** Initialize a session / WebRTC connection and return a <video> srcObject or stream URL */
   connect(): Promise<MediaStream | string>;
-  /** Send text for the avatar to speak with lip-sync */
   speak(text: string): Promise<void>;
-  /** Interrupt current speech */
   interrupt(): void;
-  /** Clean up session */
   disconnect(): Promise<void>;
-  /** Current state */
   state: "disconnected" | "connecting" | "idle" | "speaking";
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/health-chat`;
 
 export function useHealthChat() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [avatarAdapter, setAvatarAdapter] = useState<AvatarAdapter | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+
+  /** Create a new conversation row if one doesn't exist yet */
+  const ensureConversation = useCallback(async () => {
+    if (conversationIdRef.current || !user) return conversationIdRef.current;
+    const { data, error } = await supabase
+      .from("chat_conversations")
+      .insert({ user_id: user.id })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Failed to create conversation:", error);
+      return null;
+    }
+    conversationIdRef.current = data.id;
+    return data.id;
+  }, [user]);
+
+  /** Persist a single message to the database */
+  const persistMessage = useCallback(
+    async (conversationId: string, role: "user" | "assistant", content: string) => {
+      if (!user) return;
+      await supabase.from("chat_messages").insert({
+        conversation_id: conversationId,
+        user_id: user.id,
+        role,
+        content,
+      });
+    },
+    [user]
+  );
 
   const sendMessage = useCallback(
     async (input: string) => {
@@ -41,6 +67,12 @@ export function useHealthChat() {
       const updatedMessages = [...messages, userMsg];
       setMessages(updatedMessages);
       setIsStreaming(true);
+
+      // Persist user message
+      const convId = await ensureConversation();
+      if (convId) {
+        persistMessage(convId, "user", input);
+      }
 
       let assistantSoFar = "";
 
@@ -114,7 +146,12 @@ export function useHealthChat() {
           }
         }
 
-        // Send completed response to avatar if connected
+        // Persist completed assistant response
+        if (convId && assistantSoFar) {
+          persistMessage(convId, "assistant", assistantSoFar);
+        }
+
+        // Send to avatar if connected
         if (avatarAdapter && assistantSoFar) {
           avatarAdapter.speak(assistantSoFar).catch(console.error);
         }
@@ -128,7 +165,7 @@ export function useHealthChat() {
         abortRef.current = null;
       }
     },
-    [messages, avatarAdapter]
+    [messages, avatarAdapter, ensureConversation, persistMessage]
   );
 
   const stopStreaming = useCallback(() => {
@@ -136,9 +173,17 @@ export function useHealthChat() {
     avatarAdapter?.interrupt();
   }, [avatarAdapter]);
 
-  const clearChat = useCallback(() => {
+  const clearChat = useCallback(async () => {
+    // End current conversation
+    if (conversationIdRef.current && user) {
+      await supabase
+        .from("chat_conversations")
+        .update({ ended_at: new Date().toISOString() })
+        .eq("id", conversationIdRef.current);
+    }
+    conversationIdRef.current = null;
     setMessages([]);
-  }, []);
+  }, [user]);
 
   return {
     messages,
@@ -146,7 +191,6 @@ export function useHealthChat() {
     sendMessage,
     stopStreaming,
     clearChat,
-    /** Plug in an external avatar service (D-ID, HeyGen, Simli, etc.) */
     setAvatarAdapter,
     avatarAdapter,
   };
