@@ -65,7 +65,7 @@ const ConversationalAgent = () => {
           />
 
           <div
-            className="relative h-40 w-40 overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg"
+            className="relative h-64 w-64 overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg"
             style={{
               animation:
                 agentState === "speaking"
