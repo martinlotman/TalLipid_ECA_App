@@ -13,9 +13,11 @@ import {
   Save,
   RefreshCw,
   PenLine,
+  AlertCircle,
 } from "lucide-react";
 import type { HealthData } from "@/hooks/useDailyLog";
 import type { DailyLog } from "@/components/DailyLogHistory";
+import { useHealthConnect } from "@/hooks/useHealthConnect";
 
 interface HealthDataEntryProps {
   onSubmit: (data: HealthData) => void;
@@ -31,26 +33,44 @@ const METRICS: { key: string; label: string; icon: typeof Footprints; unit: stri
   { key: "sleepHours", label: "Sleep", icon: Moon, unit: "hrs", placeholder: "e.g. 7.5", step: "0.5" },
 ];
 
-const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps) => {
-  const [mode, setMode] = useState<"idle" | "syncing" | "manual">("idle");
-  const [formData, setFormData] = useState<Record<string, string>>({});
+// Metrics that Health Connect can auto-fill
+const HC_AUTO_METRICS = ["steps", "heartRate"];
 
-  const simulateWatchSync = useCallback(() => {
+const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps) => {
+  const [mode, setMode] = useState<"idle" | "syncing" | "manual" | "review">("idle");
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const { syncFromWatch, loading: hcLoading, error: hcError, isAvailable: hcAvailable } = useHealthConnect();
+
+  const handleWatchSync = useCallback(async () => {
     setMode("syncing");
-    // Simulate fetching data from Redmi Watch 5 Active via Health Connect
-    setTimeout(() => {
-      const synced: HealthData = {
-        steps: Math.floor(4000 + Math.random() * 8000),
-        heartRate: Math.floor(60 + Math.random() * 30),
-        spo2: Math.floor(95 + Math.random() * 5),
-        stressLevel: Math.floor(20 + Math.random() * 50),
-        sleepHours: parseFloat((5 + Math.random() * 4).toFixed(1)),
-        syncSource: "watch",
-      };
-      onSubmit(synced);
+    const data = await syncFromWatch();
+    if (data) {
+      // Pre-fill the form with synced data, let user complete SpO2/stress/sleep manually
+      setFormData({
+        steps: String(data.steps),
+        heartRate: String(data.heartRate),
+        spo2: data.spo2 ? String(data.spo2) : "",
+        stressLevel: data.stressLevel ? String(data.stressLevel) : "",
+        sleepHours: data.sleepHours ? String(data.sleepHours) : "",
+      });
+      setMode("review");
+    } else {
       setMode("idle");
-    }, 2000);
-  }, [onSubmit]);
+    }
+  }, [syncFromWatch]);
+
+  const handleSubmitReview = () => {
+    const data: HealthData = {
+      steps: parseInt(formData.steps) || 0,
+      heartRate: parseInt(formData.heartRate) || 0,
+      spo2: parseInt(formData.spo2) || 0,
+      stressLevel: parseInt(formData.stressLevel) || 0,
+      sleepHours: parseFloat(formData.sleepHours) || 0,
+      syncSource: "watch",
+    };
+    onSubmit(data);
+    setMode("idle");
+  };
 
   const handleManualSubmit = () => {
     const data: HealthData = {
@@ -99,6 +119,66 @@ const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps
                 </div>
               );
             })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Review synced data (some fields auto-filled, others need manual input)
+  if (mode === "review") {
+    return (
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center text-base">Review Synced Data</CardTitle>
+          <p className="text-center text-xs text-muted-foreground">
+            Steps & heart rate synced from watch. Please complete the remaining fields.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3 px-5 pb-5">
+          {METRICS.map(({ key, label, icon: Icon, placeholder, step }) => {
+            const isSynced = HC_AUTO_METRICS.includes(key) && formData[key];
+            return (
+              <div key={key} className="space-y-1">
+                <Label htmlFor={key} className="flex items-center gap-2 text-xs font-medium">
+                  <Icon className="h-3.5 w-3.5 text-primary" />
+                  {label}
+                  {isSynced && (
+                    <span className="ml-auto text-[10px] text-primary font-medium">
+                      ✓ from watch
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id={key}
+                  type="number"
+                  step={step}
+                  placeholder={placeholder}
+                  value={formData[key] || ""}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, [key]: e.target.value }))
+                  }
+                  className={`h-10 rounded-xl text-sm ${isSynced ? "border-primary/30 bg-primary/5" : ""}`}
+                />
+              </div>
+            );
+          })}
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMode("idle")}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="hero"
+              className="flex-1 gap-2"
+              onClick={handleSubmitReview}
+            >
+              <Save className="h-4 w-4" />
+              Save All
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -164,19 +244,30 @@ const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps
         </p>
       </CardHeader>
       <CardContent className="space-y-3 px-5 pb-5">
+        {hcError && (
+          <div className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{hcError}</span>
+          </div>
+        )}
         <Button
           variant="hero"
           className="w-full gap-2"
-          onClick={simulateWatchSync}
-          disabled={mode === "syncing"}
+          onClick={handleWatchSync}
+          disabled={mode === "syncing" || hcLoading}
         >
-          {mode === "syncing" ? (
+          {mode === "syncing" || hcLoading ? (
             <RefreshCw className="h-5 w-5 animate-spin" />
           ) : (
             <Watch className="h-5 w-5" />
           )}
-          {mode === "syncing" ? "Syncing from watch…" : "Sync from Watch"}
+          {mode === "syncing" || hcLoading ? "Syncing from watch…" : "Sync from Watch"}
         </Button>
+        {!hcAvailable && (
+          <p className="text-center text-[10px] text-muted-foreground">
+            Watch sync requires the native Android app with Health Connect installed
+          </p>
+        )}
         <Button
           variant="outline"
           className="w-full gap-2"
