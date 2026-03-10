@@ -33,6 +33,7 @@ const App = () => (
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/install" element={<InstallPage />} />
           <Route path="/watch-setup" element={<ProtectedRoute><WatchSetup /></ProtectedRoute>} />
+          <Route path="/questionnaires" element={<ProtectedRoute><Questionnaires /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
