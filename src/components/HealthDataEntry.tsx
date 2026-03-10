@@ -34,7 +34,7 @@ const METRICS: { key: string; label: string; icon: typeof Footprints; unit: stri
 ];
 
 // Metrics that Health Connect can auto-fill
-const HC_AUTO_METRICS = ["steps", "heartRate"];
+const HC_AUTO_METRICS = ["steps", "heartRate", "spo2", "sleepHours"];
 
 const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps) => {
   const [mode, setMode] = useState<"idle" | "syncing" | "manual" | "review">("idle");
