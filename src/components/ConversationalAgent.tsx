@@ -8,41 +8,14 @@ import { useHealthChat } from "@/hooks/useHealthChat";
 import ReactMarkdown from "react-markdown";
 
 const ConversationalAgent = () => {
-  const { messages, isStreaming, sendMessage, stopStreaming, clearChat, avatarAdapter } = useHealthChat();
+  const { messages, isStreaming, sendMessage, stopStreaming, clearChat } = useHealthChat();
   const [input, setInput] = useState("");
-  const [frame, setFrame] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Determine visual state from chat activity
-  const agentState = isStreaming ? "speaking" : "idle";
-
-  // Animate avatar frames
-  useEffect(() => {
-    const speed = agentState === "speaking" ? 600 : 2000;
-    const interval = setInterval(() => setFrame((f) => (f + 1) % 2), speed);
-    return () => clearInterval(interval);
-  }, [agentState]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // If an avatar adapter provides a MediaStream, attach to video element
-  useEffect(() => {
-    if (!avatarAdapter || !videoRef.current) return;
-    avatarAdapter.connect().then((streamOrUrl) => {
-      if (videoRef.current) {
-        if (typeof streamOrUrl === "string") {
-          videoRef.current.src = streamOrUrl;
-        } else {
-          videoRef.current.srcObject = streamOrUrl;
-        }
-      }
-    }).catch(console.error);
-    return () => { avatarAdapter.disconnect().catch(console.error); };
-  }, [avatarAdapter]);
 
   const handleSend = () => {
     const text = input.trim();
