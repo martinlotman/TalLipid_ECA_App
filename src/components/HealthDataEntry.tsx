@@ -132,7 +132,7 @@ const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps
         <CardHeader className="pb-2">
           <CardTitle className="text-center text-base">Review Synced Data</CardTitle>
           <p className="text-center text-xs text-muted-foreground">
-            Steps & heart rate synced from watch. Please complete the remaining fields.
+            Steps, heart rate, SpO2 & sleep synced from watch. Stress level must be entered manually.
           </p>
         </CardHeader>
         <CardContent className="space-y-3 px-5 pb-5">
