@@ -34,7 +34,7 @@ const METRICS: { key: string; label: string; icon: typeof Footprints; unit: stri
 ];
 
 // Metrics that Health Connect can auto-fill
-const HC_AUTO_METRICS = ["steps", "heartRate"];
+const HC_AUTO_METRICS = ["steps", "heartRate", "spo2", "sleepHours"];
 
 const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps) => {
   const [mode, setMode] = useState<"idle" | "syncing" | "manual" | "review">("idle");
@@ -132,7 +132,7 @@ const HealthDataEntry = ({ onSubmit, submitted, todayLog }: HealthDataEntryProps
         <CardHeader className="pb-2">
           <CardTitle className="text-center text-base">Review Synced Data</CardTitle>
           <p className="text-center text-xs text-muted-foreground">
-            Steps & heart rate synced from watch. Please complete the remaining fields.
+            Steps, heart rate, SpO2 & sleep synced from watch. Stress level must be entered manually.
           </p>
         </CardHeader>
         <CardContent className="space-y-3 px-5 pb-5">
