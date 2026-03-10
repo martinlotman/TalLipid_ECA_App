@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
         avg_sleep_w2d: String(avgSleep),
       };
 
-      const redcapUrl = `${redcapApiUrl}api/`;
+      // Use REDCAP_API_URL directly — it should be the full API endpoint
+      const redcapUrl = redcapApiUrl.endsWith('/') ? redcapApiUrl : `${redcapApiUrl}/`;
       console.log(`Pushing to REDCap URL: ${redcapUrl}`, JSON.stringify(record));
 
       const formData = new FormData();
