@@ -1,4 +1,4 @@
-import { Activity, ClipboardList, LogOut, Shield, Watch } from "lucide-react";
+import { Activity, ClipboardList, Download, LogOut, Shield, Watch } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
@@ -41,6 +41,9 @@ const Index = () => {
               <Shield className="h-4 w-4" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" onClick={() => navigate("/install")} title="Install App">
+            <Download className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/questionnaires")} title="Questionnaires">
             <ClipboardList className="h-4 w-4" />
           </Button>
