@@ -47,20 +47,20 @@ export function useHealthConnect() {
       }
 
       // Check availability
-      const { available } = await Health.isAvailable();
+      const { available, reason } = await Health.isAvailable();
       if (!available) {
         setError(
           platform === "ios"
-            ? "Apple Health is not available on this device."
-            : "Health Connect is not available on this device. Please install Google Health Connect."
+            ? `Apple Health is not available on this device${reason ? `: ${reason}` : ""}.`
+            : `Health Connect is not available on this device${reason ? `: ${reason}` : ""}. Please install Google Health Connect.`
         );
         setLoading(false);
         return null;
       }
 
-      // Request permissions — same API for both platforms
+      // Request permissions for all data types we need
       await Health.requestAuthorization({
-        read: ["steps", "heartRate"],
+        read: ["steps", "heartRate", "oxygenSaturation", "sleep"],
         write: [],
       });
 
@@ -69,6 +69,11 @@ export function useHealthConnect() {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startDate = startOfDay.toISOString();
       const endDate = now.toISOString();
+
+      // For sleep, look back to yesterday evening (sleep usually starts the night before)
+      const sleepStart = new Date(startOfDay);
+      sleepStart.setHours(sleepStart.getHours() - 12); // noon yesterday
+      const sleepStartDate = sleepStart.toISOString();
 
       // Read steps
       let steps = 0;
@@ -81,8 +86,8 @@ export function useHealthConnect() {
         if (stepsResult?.samples?.length) {
           steps = stepsResult.samples.reduce((sum: number, s: any) => sum + (s.value || 0), 0);
         }
-      } catch {
-        console.warn("Could not read steps");
+      } catch (e) {
+        console.warn("Could not read steps:", e);
       }
 
       // Read heart rate
@@ -99,16 +104,61 @@ export function useHealthConnect() {
             hrResult.samples.length;
           heartRate = Math.round(avg);
         }
-      } catch {
-        console.warn("Could not read heart rate");
+      } catch (e) {
+        console.warn("Could not read heart rate:", e);
+      }
+
+      // Read blood oxygen (SpO2)
+      let spo2 = 0;
+      try {
+        const spo2Result = await Health.readSamples({
+          dataType: "oxygenSaturation",
+          startDate,
+          endDate,
+        });
+        if (spo2Result?.samples?.length) {
+          const latest = spo2Result.samples[spo2Result.samples.length - 1];
+          // HealthKit returns as fraction (0.0–1.0), Health Connect returns as percentage
+          const rawValue = latest.value || 0;
+          spo2 = rawValue <= 1 ? Math.round(rawValue * 100) : Math.round(rawValue);
+        }
+      } catch (e) {
+        console.warn("Could not read SpO2:", e);
+      }
+
+      // Read sleep
+      let sleepHours = 0;
+      try {
+        const sleepResult = await Health.readSamples({
+          dataType: "sleep",
+          startDate: sleepStartDate,
+          endDate,
+        });
+        if (sleepResult?.samples?.length) {
+          // Sum all sleep segments duration in hours
+          let totalMs = 0;
+          for (const s of sleepResult.samples) {
+            if (s.startDate && s.endDate) {
+              const start = new Date(s.startDate).getTime();
+              const end = new Date(s.endDate).getTime();
+              totalMs += end - start;
+            } else if (s.value) {
+              // Some implementations return value in minutes
+              totalMs += (s.value as number) * 60 * 1000;
+            }
+          }
+          sleepHours = Math.round((totalMs / (1000 * 60 * 60)) * 10) / 10; // 1 decimal
+        }
+      } catch (e) {
+        console.warn("Could not read sleep:", e);
       }
 
       const healthData: HealthData = {
         steps,
         heartRate,
-        spo2: 0,
-        stressLevel: 0,
-        sleepHours: 0,
+        spo2,
+        stressLevel: 0, // Not available via HealthKit/Health Connect — user enters manually
+        sleepHours,
         syncSource: "watch",
       };
 
