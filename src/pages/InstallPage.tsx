@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Smartphone, Apple, Chrome, Share } from "lucide-react";
+import { ArrowLeft, Check, Download, Smartphone, Apple, Chrome, Share, MoreVertical } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -9,12 +10,12 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const InstallPage = () => {
+  const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
 
   useEffect(() => {
-    // Detect platform
     const ua = navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(ua)) {
       setPlatform("ios");
@@ -22,12 +23,10 @@ const InstallPage = () => {
       setPlatform("android");
     }
 
-    // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
     }
 
-    // Listen for install prompt
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -48,7 +47,15 @@ const InstallPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
+    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-6">
+      {/* Back button */}
+      <div className="w-full max-w-md">
+        <Button variant="ghost" size="sm" className="mb-4 gap-1.5" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
       <div className="w-full max-w-md space-y-6">
         {/* App icon & title */}
         <div className="flex flex-col items-center gap-4">
@@ -58,9 +65,9 @@ const InstallPage = () => {
             className="h-24 w-24 rounded-2xl shadow-lg"
           />
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground">TalLipid</h1>
+            <h1 className="text-2xl font-bold text-foreground">Install TalLipid</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Lipid Medication Monitor
+              Add to your home screen for the best experience
             </p>
           </div>
         </div>
@@ -69,19 +76,19 @@ const InstallPage = () => {
           <Card>
             <CardContent className="flex flex-col items-center gap-3 p-6">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Download className="h-7 w-7 text-primary" />
+                <Check className="h-7 w-7 text-primary" />
               </div>
               <p className="text-center font-medium text-foreground">
-                TalLipid is installed!
+                TalLipid is already installed!
               </p>
               <p className="text-center text-sm text-muted-foreground">
-                Open it from your home screen.
+                Open it from your home screen for the full app experience.
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
-            {/* Direct install button (Android/Desktop with prompt) */}
+            {/* Direct install button (Android/Desktop when browser supports it) */}
             {deferredPrompt && (
               <Button
                 size="lg"
@@ -93,78 +100,94 @@ const InstallPage = () => {
               </Button>
             )}
 
-            {/* iOS instructions */}
+            {/* iOS instructions — always shown on iOS */}
             {platform === "ios" && (
-              <Card>
-                <CardContent className="space-y-4 p-5">
+              <Card className="border-primary/20">
+                <CardContent className="space-y-5 p-5">
                   <div className="flex items-center gap-3">
-                    <Apple className="h-6 w-6 text-foreground" />
-                    <h2 className="font-semibold text-foreground">Install on iPhone</h2>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <Apple className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-foreground">Install on iPhone / iPad</h2>
+                      <p className="text-xs text-muted-foreground">Using Safari only</p>
+                    </div>
                   </div>
-                  <ol className="space-y-3 text-sm text-foreground/80">
+
+                  <ol className="space-y-4 text-sm text-foreground/80">
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         1
                       </span>
-                      <span>
+                      <span className="pt-0.5">
                         Tap the <strong>Share</strong> button{" "}
-                        <Share className="inline h-4 w-4" /> at the bottom of Safari
+                        <Share className="inline h-4 w-4 text-primary" /> at the bottom of the screen
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         2
                       </span>
-                      <span>
+                      <span className="pt-0.5">
                         Scroll down and tap <strong>"Add to Home Screen"</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         3
                       </span>
-                      <span>
-                        Tap <strong>"Add"</strong> in the top right corner
+                      <span className="pt-0.5">
+                        Tap <strong>"Add"</strong> in the top-right corner
                       </span>
                     </li>
                   </ol>
-                  <p className="text-xs text-muted-foreground">
-                    ⚠️ Must use Safari — other browsers don't support installation on iOS.
-                  </p>
+
+                  <div className="rounded-lg bg-muted/50 px-3 py-2">
+                    <p className="text-xs text-muted-foreground">
+                      ⚠️ You must use <strong>Safari</strong> — Chrome and other browsers on iOS don't support "Add to Home Screen."
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Android instructions (fallback if no prompt) */}
+            {/* Android instructions (fallback when no beforeinstallprompt) */}
             {platform === "android" && !deferredPrompt && (
-              <Card>
-                <CardContent className="space-y-4 p-5">
+              <Card className="border-primary/20">
+                <CardContent className="space-y-5 p-5">
                   <div className="flex items-center gap-3">
-                    <Smartphone className="h-6 w-6 text-foreground" />
-                    <h2 className="font-semibold text-foreground">Install on Android</h2>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <Smartphone className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-foreground">Install on Android</h2>
+                      <p className="text-xs text-muted-foreground">Using Chrome</p>
+                    </div>
                   </div>
-                  <ol className="space-y-3 text-sm text-foreground/80">
+
+                  <ol className="space-y-4 text-sm text-foreground/80">
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         1
                       </span>
-                      <span>
-                        Tap the <strong>three-dot menu</strong> (⋮) in Chrome
+                      <span className="pt-0.5">
+                        Tap the <strong>three-dot menu</strong>{" "}
+                        <MoreVertical className="inline h-4 w-4 text-primary" /> in Chrome
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         2
                       </span>
-                      <span>
+                      <span className="pt-0.5">
                         Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         3
                       </span>
-                      <span>
+                      <span className="pt-0.5">
                         Tap <strong>"Install"</strong> to confirm
                       </span>
                     </li>
@@ -175,18 +198,55 @@ const InstallPage = () => {
 
             {/* Desktop fallback */}
             {platform === "desktop" && !deferredPrompt && (
-              <Card>
-                <CardContent className="space-y-4 p-5">
-                  <div className="flex items-center gap-3">
-                    <Chrome className="h-6 w-6 text-foreground" />
-                    <h2 className="font-semibold text-foreground">Install on Desktop</h2>
-                  </div>
-                  <p className="text-sm text-foreground/80">
-                    Click the install icon in your browser's address bar, or open this page on your
-                    phone to install the mobile app.
-                  </p>
-                </CardContent>
-              </Card>
+              <>
+                {/* Show both iOS and Android instructions on desktop for reference */}
+                <Card className="border-primary/20">
+                  <CardContent className="space-y-5 p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                        <Chrome className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="font-semibold text-foreground">Install on Desktop</h2>
+                        <p className="text-xs text-muted-foreground">Chrome or Edge</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Look for the <strong>install icon</strong> (⊕) in your browser's address bar and click it, or use the browser menu → "Install TalLipid."
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="relative flex items-center gap-4 py-2">
+                  <div className="flex-1 border-t border-border" />
+                  <span className="text-xs text-muted-foreground">or install on mobile</span>
+                  <div className="flex-1 border-t border-border" />
+                </div>
+
+                <Card>
+                  <CardContent className="space-y-4 p-5">
+                    <div className="flex items-center gap-3">
+                      <Apple className="h-5 w-5 text-foreground" />
+                      <h3 className="font-semibold text-foreground">iPhone / iPad</h3>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Open this page in <strong>Safari</strong> → tap <Share className="inline h-4 w-4" /> → <strong>"Add to Home Screen"</strong>
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="space-y-4 p-5">
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="h-5 w-5 text-foreground" />
+                      <h3 className="font-semibold text-foreground">Android</h3>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Open this page in <strong>Chrome</strong> → tap <MoreVertical className="inline h-4 w-4" /> → <strong>"Install app"</strong>
+                    </p>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </>
         )}
