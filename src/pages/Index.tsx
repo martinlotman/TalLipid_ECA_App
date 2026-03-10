@@ -41,6 +41,9 @@ const Index = () => {
               <Shield className="h-4 w-4" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" onClick={() => navigate("/install")} title="Install App">
+            <Download className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/questionnaires")} title="Questionnaires">
             <ClipboardList className="h-4 w-4" />
           </Button>
