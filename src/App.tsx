@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
 import WatchSetup from "./pages/WatchSetup";
+import Questionnaires from "./pages/Questionnaires";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
