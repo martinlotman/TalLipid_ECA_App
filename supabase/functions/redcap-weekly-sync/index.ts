@@ -106,6 +106,9 @@ Deno.serve(async (req) => {
         avg_sleep_w2d: String(avgSleep),
       };
 
+      const redcapUrl = `${redcapApiUrl}api/`;
+      console.log(`Pushing to REDCap URL: ${redcapUrl}`, JSON.stringify(record));
+
       const formData = new FormData();
       formData.append("token", redcapApiKey);
       formData.append("content", "record");
@@ -116,7 +119,7 @@ Deno.serve(async (req) => {
       formData.append("returnContent", "count");
       formData.append("returnFormat", "json");
 
-      const redcapResponse = await fetch(`${redcapApiUrl}api/`, {
+      const redcapResponse = await fetch(redcapUrl, {
         method: "POST",
         body: formData,
       });
