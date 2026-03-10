@@ -1,50 +1,21 @@
-import { Mic, MicOff, Volume2, Send, Square, Trash2 } from "lucide-react";
+import { Volume2, Send, Square, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ecaIdle from "@/assets/eca-avatar.png";
-import ecaSpeaking from "@/assets/eca-avatar-speaking.png";
 import { useHealthChat } from "@/hooks/useHealthChat";
 import ReactMarkdown from "react-markdown";
 
 const ConversationalAgent = () => {
-  const { messages, isStreaming, sendMessage, stopStreaming, clearChat, avatarAdapter } = useHealthChat();
+  const { messages, isStreaming, sendMessage, stopStreaming, clearChat } = useHealthChat();
   const [input, setInput] = useState("");
-  const [frame, setFrame] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Determine visual state from chat activity
-  const agentState = isStreaming ? "speaking" : "idle";
-
-  // Animate avatar frames
-  useEffect(() => {
-    const speed = agentState === "speaking" ? 600 : 2000;
-    const interval = setInterval(() => setFrame((f) => (f + 1) % 2), speed);
-    return () => clearInterval(interval);
-  }, [agentState]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // If an avatar adapter provides a MediaStream, attach to video element
-  useEffect(() => {
-    if (!avatarAdapter || !videoRef.current) return;
-    avatarAdapter.connect().then((streamOrUrl) => {
-      if (videoRef.current) {
-        if (typeof streamOrUrl === "string") {
-          videoRef.current.src = streamOrUrl;
-        } else {
-          videoRef.current.srcObject = streamOrUrl;
-        }
-      }
-    }).catch(console.error);
-    return () => { avatarAdapter.disconnect().catch(console.error); };
-  }, [avatarAdapter]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -67,51 +38,19 @@ const ConversationalAgent = () => {
       <CardContent className="flex flex-col items-center gap-3 p-4">
         {/* Avatar area — video element ready for external avatar stream */}
         <div className="relative w-full">
-          <div
-            className={`absolute -inset-2 rounded-2xl transition-all duration-500 ${
-              agentState === "speaking" ? "animate-pulse bg-primary/20" : "bg-transparent"
-            }`}
-          />
-
-          {/* External avatar video (hidden until adapter is connected) */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className={`relative mx-auto rounded-2xl border-[3px] border-primary/30 shadow-lg object-cover ${
-              avatarAdapter ? "block h-64 w-64" : "hidden"
-            }`}
-          />
-
-          {/* Fallback static avatar (shown when no external avatar) */}
-          {!avatarAdapter && (
-            <div
-              className="relative mx-auto h-64 w-64 overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg"
-              style={{
-                animation:
-                  agentState === "speaking"
-                    ? "avatar-bob 0.6s ease-in-out infinite"
-                    : "avatar-breathe 3s ease-in-out infinite",
-              }}
-            >
-              <img
-                src={ecaIdle}
-                alt="Health assistant"
-                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                style={{ opacity: frame === 0 ? 1 : 0 }}
-              />
-              <img
-                src={ecaSpeaking}
-                alt="Health assistant speaking"
-                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                style={{ opacity: frame === 1 ? 1 : 0 }}
-              />
-            </div>
-          )}
+          {/* LiveAvatar embed */}
+          <div className="relative mx-auto w-full overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg" style={{ aspectRatio: "16/9" }}>
+            <iframe
+              src="https://embed.liveavatar.com/v1/aa9f0c42-51c0-47db-acd7-d8b7a1f6f283"
+              allow="microphone"
+              title="LiveAvatar Embed"
+              className="h-full w-full border-0"
+            />
+          </div>
 
           {/* Status dot */}
           <span
-            className={`absolute bottom-1 right-1/2 translate-x-[7.5rem] h-4 w-4 rounded-full border-2 border-card transition-colors ${
+            className={`absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-card transition-colors ${
               isStreaming ? "bg-green-500 animate-pulse" : "bg-muted-foreground"
             }`}
           />
@@ -210,7 +149,7 @@ const ConversationalAgent = () => {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Video avatar integration ready — plug in D-ID, HeyGen, or Simli adapter
+          Powered by LiveAvatar
         </p>
       </CardContent>
     </Card>
