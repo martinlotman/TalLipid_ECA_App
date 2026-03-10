@@ -1,11 +1,9 @@
-import { Mic, MicOff, Volume2, Send, Square, Trash2 } from "lucide-react";
+import { Volume2, Send, Square, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ecaIdle from "@/assets/eca-avatar.png";
-import ecaSpeaking from "@/assets/eca-avatar-speaking.png";
 import { useHealthChat } from "@/hooks/useHealthChat";
 import ReactMarkdown from "react-markdown";
 
