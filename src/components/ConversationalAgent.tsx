@@ -67,51 +67,19 @@ const ConversationalAgent = () => {
       <CardContent className="flex flex-col items-center gap-3 p-4">
         {/* Avatar area — video element ready for external avatar stream */}
         <div className="relative w-full">
-          <div
-            className={`absolute -inset-2 rounded-2xl transition-all duration-500 ${
-              agentState === "speaking" ? "animate-pulse bg-primary/20" : "bg-transparent"
-            }`}
-          />
-
-          {/* External avatar video (hidden until adapter is connected) */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className={`relative mx-auto rounded-2xl border-[3px] border-primary/30 shadow-lg object-cover ${
-              avatarAdapter ? "block h-64 w-64" : "hidden"
-            }`}
-          />
-
-          {/* Fallback static avatar (shown when no external avatar) */}
-          {!avatarAdapter && (
-            <div
-              className="relative mx-auto h-64 w-64 overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg"
-              style={{
-                animation:
-                  agentState === "speaking"
-                    ? "avatar-bob 0.6s ease-in-out infinite"
-                    : "avatar-breathe 3s ease-in-out infinite",
-              }}
-            >
-              <img
-                src={ecaIdle}
-                alt="Health assistant"
-                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                style={{ opacity: frame === 0 ? 1 : 0 }}
-              />
-              <img
-                src={ecaSpeaking}
-                alt="Health assistant speaking"
-                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                style={{ opacity: frame === 1 ? 1 : 0 }}
-              />
-            </div>
-          )}
+          {/* LiveAvatar embed */}
+          <div className="relative mx-auto w-full overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg" style={{ aspectRatio: "16/9" }}>
+            <iframe
+              src="https://embed.liveavatar.com/v1/aa9f0c42-51c0-47db-acd7-d8b7a1f6f283"
+              allow="microphone"
+              title="LiveAvatar Embed"
+              className="h-full w-full border-0"
+            />
+          </div>
 
           {/* Status dot */}
           <span
-            className={`absolute bottom-1 right-1/2 translate-x-[7.5rem] h-4 w-4 rounded-full border-2 border-card transition-colors ${
+            className={`absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-card transition-colors ${
               isStreaming ? "bg-green-500 animate-pulse" : "bg-muted-foreground"
             }`}
           />
