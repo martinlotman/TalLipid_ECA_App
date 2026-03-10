@@ -149,7 +149,7 @@ const ConversationalAgent = () => {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Video avatar integration ready — plug in D-ID, HeyGen, or Simli adapter
+          Powered by LiveAvatar
         </p>
       </CardContent>
     </Card>
