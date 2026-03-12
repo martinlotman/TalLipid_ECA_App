@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          sent_by: string
+          target_user_id: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sent_by: string
+          target_user_id: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sent_by?: string
+          target_user_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           ended_at: string | null
