@@ -375,6 +375,17 @@ const AdminDashboard = () => {
     }))
     .sort((a, b) => b.sessions - a.sessions);
 
+  // Chat activity trend (last 14 days)
+  const chatDailyTrend = last14Days.map((date) => {
+    const daySessions = allConversations.filter((c) => c.started_at.slice(0, 10) === date);
+    const totalMessages = daySessions.reduce((a, b) => a + b.messageCount, 0);
+    return {
+      date: date.slice(5),
+      sessions: daySessions.length,
+      messages: totalMessages,
+    };
+  });
+
   // Daily log trend (last 14 days)
   const last14Days: string[] = [];
   for (let i = 13; i >= 0; i--) {
