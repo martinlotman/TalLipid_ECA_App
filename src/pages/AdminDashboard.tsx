@@ -318,6 +318,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExpandConvo = async (convoId: string) => {
+    if (expandedConvo === convoId) {
+      setExpandedConvo(null);
+      return;
+    }
+    setExpandedConvo(convoId);
+    setLoadingMessages(true);
+    const { data: msgs } = await supabase
+      .from("chat_messages")
+      .select("role, content, created_at")
+      .eq("conversation_id", convoId)
+      .order("created_at", { ascending: true });
+    setExpandedMessages(msgs ?? []);
+    setLoadingMessages(false);
+  };
+
   const filteredProfiles = profiles.filter((p) => {
     const q = search.toLowerCase();
     return (
