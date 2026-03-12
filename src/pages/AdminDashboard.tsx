@@ -595,6 +595,127 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* ===== CHATBOT ACTIVITY TAB ===== */}
+          <TabsContent value="chatbot" className="space-y-6">
+            {/* Chat activity over time */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Chatbot Activity (Last 14 Days)</CardTitle>
+                <CardDescription>Sessions started and messages exchanged per day</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chatDailyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="date" tick={{ fill: "hsl(200, 10%, 50%)" }} />
+                      <YAxis allowDecimals={false} tick={{ fill: "hsl(200, 10%, 50%)" }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(0, 0%, 100%)",
+                          border: "1px solid hsl(160, 15%, 88%)",
+                          borderRadius: "0.5rem",
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="sessions" fill="hsl(168, 55%, 42%)" name="Sessions" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="messages" fill="hsl(200, 60%, 50%)" name="Messages" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Conversation feed */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Conversation Timeline
+                </CardTitle>
+                <CardDescription>All chatbot sessions — click to expand full transcript</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  {allConversations.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">No conversations yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allConversations.map((c) => (
+                        <div key={c.id} className="rounded-lg border border-border overflow-hidden">
+                          <button
+                            onClick={() => handleExpandConvo(c.id)}
+                            className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/50 transition-colors"
+                          >
+                            {expandedConvo === c.id ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-foreground">{c.userName}</span>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {c.messageCount} msgs
+                                </Badge>
+                                {c.ended_at && (
+                                  <Badge variant="outline" className="text-[10px]">Ended</Badge>
+                                )}
+                              </div>
+                              {c.lastMessage && (
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                  {c.lastMessage}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(c.started_at).toLocaleDateString()}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(c.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                          </button>
+
+                          {expandedConvo === c.id && (
+                            <div className="border-t border-border bg-muted/30 p-3 space-y-2">
+                              {loadingMessages ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">Loading…</p>
+                              ) : expandedMessages.length === 0 ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">No messages</p>
+                              ) : (
+                                expandedMessages.map((m, i) => (
+                                  <div
+                                    key={i}
+                                    className={`text-sm rounded-lg px-3 py-2 ${
+                                      m.role === "user"
+                                        ? "bg-primary/10 text-foreground ml-8"
+                                        : "bg-card text-foreground mr-8 border border-border/50"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                        {m.role}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                      </span>
+                                    </div>
+                                    <p className="whitespace-pre-wrap">{m.content}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* ===== ANALYTICS TAB ===== */}
           <TabsContent value="analytics" className="space-y-6">
             {/* Daily activity trend */}
