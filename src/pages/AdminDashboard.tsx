@@ -98,6 +98,12 @@ const AdminDashboard = () => {
   const [userRoles, setUserRoles] = useState<Map<string, string[]>>(new Map());
   const [roleLoading, setRoleLoading] = useState(false);
 
+  // Translation editor
+  const [translationRows, setTranslationRows] = useState<Array<{ id: string; key: string; en: string; et: string; ru: string }>>([]);
+  const [translationSearch, setTranslationSearch] = useState("");
+  const [editingTranslation, setEditingTranslation] = useState<{ id: string; key: string; en: string; et: string; ru: string } | null>(null);
+  const [translationLoading, setTranslationLoading] = useState(false);
+
   // Chatbot activity monitor
   const [allConversations, setAllConversations] = useState<Array<{
     id: string;
