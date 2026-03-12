@@ -306,6 +306,35 @@ const AdminDashboard = () => {
     setLoadingChats(false);
   };
 
+  const handleToggleRole = async (userId: string, role: "admin" | "moderator" | "user") => {
+    const currentRoles = userRoles.get(userId) ?? [];
+    if (currentRoles.includes(role)) {
+      // Remove role
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+      if (error) {
+        toast.error("Failed to remove role");
+      } else {
+        toast.success(`Removed '${role}' role`);
+        fetchRoles();
+      }
+    } else {
+      // Add role
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role });
+      if (error) {
+        toast.error("Failed to add role");
+      } else {
+        toast.success(`Added '${role}' role`);
+        fetchRoles();
+      }
+    }
+  };
+
   const handleSendNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
       toast.error("Title and body are required");
