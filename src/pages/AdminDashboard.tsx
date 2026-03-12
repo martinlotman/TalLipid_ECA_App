@@ -20,7 +20,7 @@ import {
 import {
   ArrowLeft, RefreshCw, Save, Users, Activity, MessageSquare,
   Shield, Search, Bell, Send, Pill, BarChart3, Eye, Bot, Clock,
-  ChevronDown, ChevronRight, UserCog,
+  ChevronDown, ChevronRight, UserCog, Languages,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
