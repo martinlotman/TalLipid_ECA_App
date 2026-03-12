@@ -118,11 +118,12 @@ const AdminDashboard = () => {
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    const [profilesRes, logsRes, convosRes, notifsRes] = await Promise.all([
+    const [profilesRes, logsRes, convosRes, notifsRes, msgsRes] = await Promise.all([
       supabase.from("profiles").select("*").order("enrolled_at", { ascending: false }),
       supabase.from("daily_logs").select("user_id, date, medication_taken, steps, heart_rate, spo2, sleep_hours, stress_level").order("date", { ascending: false }),
-      supabase.from("chat_conversations").select("id, user_id"),
+      supabase.from("chat_conversations").select("id, user_id, started_at, ended_at").order("started_at", { ascending: false }),
       supabase.from("admin_notifications").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("chat_messages").select("conversation_id, role, content, created_at").order("created_at", { ascending: false }),
     ]);
 
     if (profilesRes.error) {
