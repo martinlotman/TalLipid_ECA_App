@@ -40,7 +40,7 @@ const ConversationalAgent = () => {
         <div className="relative w-full">
           <div className="relative mx-auto w-full overflow-hidden rounded-2xl border-[3px] border-primary/30 shadow-lg" style={{ aspectRatio: "16/9" }}>
             <iframe
-              src="https://embed.liveavatar.com/v1/48265327-fe4b-4cad-862c-d80b06787f45"
+              src="https://embed.liveavatar.com/v1/14bbaaad-2938-4c94-b3ac-9eb22c1d98e7"
               allow="microphone"
               title="LiveAvatar Embed"
               className="h-full w-full border-0"
