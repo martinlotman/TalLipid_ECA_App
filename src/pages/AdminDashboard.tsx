@@ -349,6 +349,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleSaveTranslation = async () => {
+    if (!editingTranslation) return;
+    const { error } = await supabase
+      .from("translations")
+      .update({ en: editingTranslation.en, et: editingTranslation.et, ru: editingTranslation.ru })
+      .eq("id", editingTranslation.id);
+    if (error) {
+      toast.error("Failed to update translation");
+    } else {
+      toast.success("Translation updated");
+      setEditingTranslation(null);
+      fetchTranslations();
+    }
+  };
+
   const handleSendNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
       toast.error("Title and body are required");
