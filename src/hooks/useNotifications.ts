@@ -1,137 +1,148 @@
-import { useEffect, useState } from "react";
-import { LocalNotifications, ScheduleOn } from "@capacitor/local-notifications";
+import { useEffect, useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 
-const MEDICATION_NOTIFICATION_ID = 1001;
-const VIDEO_CALL_NOTIFICATION_ID = 1002;
+const PERMISSION_KEY = "tallipid_notif_permission";
 
 export function useNotifications() {
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(() => {
+    return localStorage.getItem(PERMISSION_KEY) === "granted";
+  });
 
-  useEffect(() => {
-    initNotifications();
+  // Register the custom notification service worker and schedule checks
+  const registerNotificationSW = useCallback(async () => {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      // Register our custom notification SW (separate from Workbox PWA SW)
+      const reg = await navigator.serviceWorker.register("/sw-notifications.js", {
+        scope: "/",
+      });
+      console.log("Notification SW registered:", reg.scope);
+
+      // Ask the SW to check for any due notifications now
+      if (reg.active) {
+        reg.active.postMessage({ type: "CHECK_NOTIFICATIONS" });
+      }
+
+      // Also set up periodic check from main thread as fallback
+      // (runs while the app tab is open)
+      const checkInterval = setInterval(() => {
+        if (reg.active) {
+          reg.active.postMessage({ type: "CHECK_NOTIFICATIONS" });
+        }
+      }, 10 * 60 * 1000); // every 10 minutes
+
+      return () => clearInterval(checkInterval);
+    } catch (err) {
+      console.warn("Failed to register notification SW:", err);
+    }
   }, []);
 
-  const initNotifications = async () => {
-    if (Capacitor.isNativePlatform()) {
-      await setupCapacitorNotifications();
-    } else {
-      await setupWebNotifications();
+  useEffect(() => {
+    if (permissionGranted && !Capacitor.isNativePlatform()) {
+      registerNotificationSW();
     }
-  };
+  }, [permissionGranted, registerNotificationSW]);
+
+  // Capacitor native notifications
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() && permissionGranted) {
+      setupCapacitorNotifications();
+    }
+  }, [permissionGranted]);
 
   const setupCapacitorNotifications = async () => {
-    const perm = await LocalNotifications.requestPermissions();
-    if (perm.display === "granted") {
-      setPermissionGranted(true);
-      await scheduleCapacitorNotifications();
-    }
-  };
-
-  const scheduleCapacitorNotifications = async () => {
-    // Cancel existing before re-scheduling
-    await LocalNotifications.cancel({
-      notifications: [
-        { id: MEDICATION_NOTIFICATION_ID },
-        { id: VIDEO_CALL_NOTIFICATION_ID },
-      ],
-    });
-
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: MEDICATION_NOTIFICATION_ID,
-          title: "💊 Daily Medication Check",
-          body: "Have you taken all of your medications today? Open HealthTrack to log it.",
-          schedule: {
-            on: { hour: 20, minute: 30 },
-            repeats: true,
-            allowWhileIdle: true,
+    try {
+      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      await LocalNotifications.cancel({
+        notifications: [{ id: 1001 }, { id: 1002 }],
+      });
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 1001,
+            title: "💊 Daily Medication Check",
+            body: "Have you taken all of your medications today? Open TalLipid to log it.",
+            schedule: {
+              on: { hour: 20, minute: 30 },
+              repeats: true,
+              allowWhileIdle: true,
+            },
+            sound: "default",
           },
-          sound: "default",
-          actionTypeId: "MEDICATION_CHECK",
-        },
-        {
-          id: VIDEO_CALL_NOTIFICATION_ID,
-          title: "📹 Weekly Health Check-in",
-          body: "Your scheduled video call with the AI Health Assistant starts now. Tap to join!",
-          schedule: {
-            on: { weekday: 6, hour: 19, minute: 0 } as ScheduleOn, // Friday = 6 in Capacitor (1=Sun)
-            repeats: true,
-            allowWhileIdle: true,
+          {
+            id: 1002,
+            title: "📹 Weekly Health Check-in",
+            body: "Your scheduled video call with the AI Health Assistant starts now.",
+            schedule: {
+              on: { weekday: 6, hour: 19, minute: 0 },
+              repeats: true,
+              allowWhileIdle: true,
+            },
+            sound: "default",
           },
-          sound: "default",
-          actionTypeId: "VIDEO_CALL",
-        },
-      ],
-    });
-  };
-
-  const setupWebNotifications = async () => {
-    if (!("Notification" in window)) return;
-
-    const perm = await Notification.requestPermission();
-    if (perm === "granted") {
-      setPermissionGranted(true);
-      scheduleWebNotifications();
+        ],
+      });
+    } catch (err) {
+      console.warn("Capacitor notification scheduling failed:", err);
     }
-  };
-
-  const scheduleWebNotifications = () => {
-    // Schedule daily medication reminder at 20:30
-    scheduleDailyWeb(20, 30, {
-      title: "💊 Daily Medication Check",
-      body: "Have you taken all of your medications today? Open HealthTrack to log it.",
-    });
-
-    // Schedule weekly Friday video call reminder at 19:00
-    scheduleWeeklyWeb(5, 19, 0, {
-      title: "📹 Weekly Health Check-in",
-      body: "Your scheduled video call with the AI Health Assistant starts now. Tap to join!",
-    });
-  };
-
-  const scheduleDailyWeb = (
-    hour: number,
-    minute: number,
-    opts: { title: string; body: string }
-  ) => {
-    const now = new Date();
-    const next = new Date();
-    next.setHours(hour, minute, 0, 0);
-    if (next <= now) next.setDate(next.getDate() + 1);
-
-    const delay = next.getTime() - now.getTime();
-    setTimeout(() => {
-      new Notification(opts.title, { body: opts.body, icon: "/favicon.ico" });
-      // Re-schedule for next day
-      scheduleDailyWeb(hour, minute, opts);
-    }, delay);
-  };
-
-  const scheduleWeeklyWeb = (
-    dayOfWeek: number, // 0=Sun, 5=Fri
-    hour: number,
-    minute: number,
-    opts: { title: string; body: string }
-  ) => {
-    const now = new Date();
-    const next = new Date();
-    next.setHours(hour, minute, 0, 0);
-    const daysUntil = (dayOfWeek - now.getDay() + 7) % 7 || 7;
-    next.setDate(now.getDate() + daysUntil);
-    if (next <= now) next.setDate(next.getDate() + 7);
-
-    const delay = next.getTime() - now.getTime();
-    setTimeout(() => {
-      new Notification(opts.title, { body: opts.body, icon: "/favicon.ico" });
-      scheduleWeeklyWeb(dayOfWeek, hour, minute, opts);
-    }, delay);
   };
 
   const requestPermission = async () => {
-    await initNotifications();
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display === "granted") {
+          setPermissionGranted(true);
+          localStorage.setItem(PERMISSION_KEY, "granted");
+          await setupCapacitorNotifications();
+        }
+      } catch (err) {
+        console.warn("Capacitor permission request failed:", err);
+      }
+    } else {
+      if (!("Notification" in window)) {
+        console.warn("Notifications not supported in this browser");
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        setPermissionGranted(true);
+        localStorage.setItem(PERMISSION_KEY, "granted");
+        await registerNotificationSW();
+        // Show a test notification to confirm it works
+        new Notification("✅ TalLipid Notifications Enabled", {
+          body: "You will receive daily medication reminders at 20:30 and weekly check-in reminders on Fridays at 19:00.",
+          icon: "/pwa-icon-192.png",
+        });
+      }
+    }
   };
 
-  return { permissionGranted, requestPermission };
+  // Utility: send admin notification via SW
+  const showAdminNotification = useCallback((title: string, body: string) => {
+    if (!permissionGranted) return;
+
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/local-notifications").then(({ LocalNotifications }) => {
+        LocalNotifications.schedule({
+          notifications: [{
+            id: Math.floor(Math.random() * 100000),
+            title,
+            body,
+            sound: "default",
+          }],
+        });
+      });
+    } else if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.active?.postMessage({ type: "SHOW_ADMIN_NOTIFICATION", title, body });
+      });
+    } else if ("Notification" in window) {
+      new Notification(title, { body, icon: "/pwa-icon-192.png" });
+    }
+  }, [permissionGranted]);
+
+  return { permissionGranted, requestPermission, showAdminNotification };
 }
