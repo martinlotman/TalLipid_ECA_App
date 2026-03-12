@@ -234,12 +234,20 @@ const AdminDashboard = () => {
     setRoleLoading(false);
   }, []);
 
+  const fetchTranslations = useCallback(async () => {
+    setTranslationLoading(true);
+    const { data } = await supabase.from("translations").select("id, key, en, et, ru").order("key");
+    setTranslationRows(data ?? []);
+    setTranslationLoading(false);
+  }, []);
+
   useEffect(() => {
     if (isAdmin) {
       fetchProfiles();
       fetchRoles();
+      fetchTranslations();
     }
-  }, [isAdmin, fetchProfiles, fetchRoles]);
+  }, [isAdmin, fetchProfiles, fetchRoles, fetchTranslations]);
 
   const handleSave = async () => {
     if (!editingUser) return;
