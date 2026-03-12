@@ -154,6 +154,7 @@ export type Database = {
           enrolled_at: string
           first_name: string | null
           id: string
+          language: string
           last_synced_at: string | null
           redcap_record_id: string | null
           sync_interval_days: number
@@ -163,6 +164,7 @@ export type Database = {
           enrolled_at?: string
           first_name?: string | null
           id: string
+          language?: string
           last_synced_at?: string | null
           redcap_record_id?: string | null
           sync_interval_days?: number
@@ -172,9 +174,37 @@ export type Database = {
           enrolled_at?: string
           first_name?: string | null
           id?: string
+          language?: string
           last_synced_at?: string | null
           redcap_record_id?: string | null
           sync_interval_days?: number
+        }
+        Relationships: []
+      }
+      translations: {
+        Row: {
+          en: string
+          et: string
+          id: string
+          key: string
+          ru: string
+          updated_at: string
+        }
+        Insert: {
+          en?: string
+          et?: string
+          id?: string
+          key: string
+          ru?: string
+          updated_at?: string
+        }
+        Update: {
+          en?: string
+          et?: string
+          id?: string
+          key?: string
+          ru?: string
+          updated_at?: string
         }
         Relationships: []
       }
