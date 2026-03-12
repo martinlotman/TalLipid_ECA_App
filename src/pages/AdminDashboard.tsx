@@ -94,6 +94,10 @@ const AdminDashboard = () => {
   // Chat session counts
   const [chatCounts, setChatCounts] = useState<Map<string, number>>(new Map());
 
+  // Role management
+  const [userRoles, setUserRoles] = useState<Map<string, string[]>>(new Map());
+  const [roleLoading, setRoleLoading] = useState(false);
+
   // Chatbot activity monitor
   const [allConversations, setAllConversations] = useState<Array<{
     id: string;
