@@ -20,7 +20,7 @@ import {
 import {
   ArrowLeft, RefreshCw, Save, Users, Activity, MessageSquare,
   Shield, Search, Bell, Send, Pill, BarChart3, Eye, Bot, Clock,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, UserCog,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -93,6 +93,10 @@ const AdminDashboard = () => {
 
   // Chat session counts
   const [chatCounts, setChatCounts] = useState<Map<string, number>>(new Map());
+
+  // Role management
+  const [userRoles, setUserRoles] = useState<Map<string, string[]>>(new Map());
+  const [roleLoading, setRoleLoading] = useState(false);
 
   // Chatbot activity monitor
   const [allConversations, setAllConversations] = useState<Array<{
@@ -211,9 +215,25 @@ const AdminDashboard = () => {
     setLoading(false);
   }, []);
 
+  const fetchRoles = useCallback(async () => {
+    setRoleLoading(true);
+    const { data } = await supabase.from("user_roles").select("user_id, role");
+    const map = new Map<string, string[]>();
+    for (const r of data ?? []) {
+      const existing = map.get(r.user_id) ?? [];
+      existing.push(r.role);
+      map.set(r.user_id, existing);
+    }
+    setUserRoles(map);
+    setRoleLoading(false);
+  }, []);
+
   useEffect(() => {
-    if (isAdmin) fetchProfiles();
-  }, [isAdmin, fetchProfiles]);
+    if (isAdmin) {
+      fetchProfiles();
+      fetchRoles();
+    }
+  }, [isAdmin, fetchProfiles, fetchRoles]);
 
   const handleSave = async () => {
     if (!editingUser) return;
@@ -284,6 +304,35 @@ const AdminDashboard = () => {
     }
     setConversations(enriched);
     setLoadingChats(false);
+  };
+
+  const handleToggleRole = async (userId: string, role: "admin" | "moderator" | "user") => {
+    const currentRoles = userRoles.get(userId) ?? [];
+    if (currentRoles.includes(role)) {
+      // Remove role
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+      if (error) {
+        toast.error("Failed to remove role");
+      } else {
+        toast.success(`Removed '${role}' role`);
+        fetchRoles();
+      }
+    } else {
+      // Add role
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role });
+      if (error) {
+        toast.error("Failed to add role");
+      } else {
+        toast.success(`Added '${role}' role`);
+        fetchRoles();
+      }
+    }
   };
 
   const handleSendNotification = async () => {
@@ -494,7 +543,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="patients" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="patients" className="gap-2">
               <Users className="h-4 w-4" /> Patients
             </TabsTrigger>
@@ -506,6 +555,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="roles" className="gap-2">
+              <UserCog className="h-4 w-4" /> Roles
             </TabsTrigger>
           </TabsList>
 
@@ -932,6 +984,66 @@ const AdminDashboard = () => {
               </Card>
             </div>
           </TabsContent>
+
+          {/* ===== ROLES TAB ===== */}
+          <TabsContent value="roles" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5" /> User Role Management
+                </CardTitle>
+                <CardDescription>
+                  Assign or remove roles for users. New users have no roles by default.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>User ID</TableHead>
+                        <TableHead className="text-center">Admin</TableHead>
+                        <TableHead className="text-center">Moderator</TableHead>
+                        <TableHead className="text-center">User</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {profiles.map((p) => {
+                        const roles = userRoles.get(p.id) ?? [];
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell className="font-medium">{p.first_name || "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground font-mono">{p.id.slice(0, 8)}…</TableCell>
+                            {(["admin", "moderator", "user"] as const).map((role) => (
+                              <TableCell key={role} className="text-center">
+                                <Button
+                                  size="sm"
+                                  variant={roles.includes(role) ? "default" : "outline"}
+                                  className="h-7 w-20 text-xs"
+                                  onClick={() => handleToggleRole(p.id, role)}
+                                >
+                                  {roles.includes(role) ? "✓ Active" : "Assign"}
+                                </Button>
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
+                      {profiles.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </main>
 
