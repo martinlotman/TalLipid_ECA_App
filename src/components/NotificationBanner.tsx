@@ -15,11 +15,12 @@ interface AdminNotification {
 }
 
 const NotificationBanner = () => {
-  const { permissionGranted, requestPermission } = useNotifications();
+  const { permissionGranted, requestPermission, showAdminNotification } = useNotifications();
   const { user } = useAuth();
   const { t } = useTranslation();
   const [adminNotifs, setAdminNotifs] = useState<AdminNotification[]>([]);
 
+  // Fetch existing unread notifications
   useEffect(() => {
     if (!user) return;
     supabase
@@ -31,6 +32,35 @@ const NotificationBanner = () => {
       .limit(5)
       .then(({ data }) => setAdminNotifs(data ?? []));
   }, [user]);
+
+  // Realtime subscription for new admin notifications → show as push notification
+  useEffect(() => {
+    if (!user || !permissionGranted) return;
+
+    const channel = supabase
+      .channel("admin-notifs-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "admin_notifications",
+          filter: `target_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newNotif = payload.new as AdminNotification;
+          // Show OS-level notification
+          showAdminNotification(newNotif.title, newNotif.body);
+          // Also add to in-app banner
+          setAdminNotifs((prev) => [newNotif, ...prev].slice(0, 5));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, permissionGranted, showAdminNotification]);
 
   const dismissNotif = async (id: string) => {
     await supabase.from("admin_notifications").update({ read: true }).eq("id", id);
