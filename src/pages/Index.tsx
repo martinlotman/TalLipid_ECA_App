@@ -8,11 +8,13 @@ import ConversationalAgent from "@/components/ConversationalAgent";
 import NotificationBanner from "@/components/NotificationBanner";
 import { useDailyLog } from "@/hooks/useDailyLog";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { t, language } = useTranslation();
   const { logs, todayLog, submitMedication, submitHealthData } = useDailyLog();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -24,9 +26,10 @@ const Index = () => {
     });
   }, [user]);
 
+  const dateLocale = language === "et" ? "et-EE" : language === "ru" ? "ru-RU" : "en-US";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
@@ -41,26 +44,24 @@ const Index = () => {
               <Shield className="h-4 w-4" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={() => navigate("/install")} title="Install App">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/install")} title={t("install.title")}>
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/questionnaires")} title="Questionnaires">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/questionnaires")} title={t("quest.title")}>
             <ClipboardList className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title="Watch Setup">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title={t("watchSetup.title")}>
             <Watch className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
+          <Button variant="ghost" size="icon" onClick={signOut} title={t("nav.signOut")}>
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      {/* Main content */}
       <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
-        {/* Today's date */}
         <p className="text-center text-sm font-medium text-muted-foreground">
-          {new Date().toLocaleDateString("en-US", {
+          {new Date().toLocaleDateString(dateLocale, {
             weekday: "long",
             month: "long",
             day: "numeric",
@@ -68,27 +69,18 @@ const Index = () => {
           })}
         </p>
 
-        {/* Notification banner */}
         <NotificationBanner />
-
-        {/* Medication check */}
         <MedicationCheck
           onSubmit={submitMedication}
           submitted={todayLog?.medicationTaken !== undefined}
           lastAnswer={todayLog?.medicationTaken}
         />
-
-        {/* Conversational Agent */}
         <ConversationalAgent />
-
-        {/* Health data entry */}
         <HealthDataEntry
           onSubmit={submitHealthData}
           submitted={todayLog?.steps !== undefined}
           todayLog={todayLog}
         />
-
-        {/* History */}
         <DailyLogHistory logs={logs} />
       </main>
     </div>

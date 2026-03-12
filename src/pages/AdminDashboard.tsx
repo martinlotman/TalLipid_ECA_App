@@ -20,7 +20,7 @@ import {
 import {
   ArrowLeft, RefreshCw, Save, Users, Activity, MessageSquare,
   Shield, Search, Bell, Send, Pill, BarChart3, Eye, Bot, Clock,
-  ChevronDown, ChevronRight, UserCog,
+  ChevronDown, ChevronRight, UserCog, Languages,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -97,6 +97,12 @@ const AdminDashboard = () => {
   // Role management
   const [userRoles, setUserRoles] = useState<Map<string, string[]>>(new Map());
   const [roleLoading, setRoleLoading] = useState(false);
+
+  // Translation editor
+  const [translationRows, setTranslationRows] = useState<Array<{ id: string; key: string; en: string; et: string; ru: string }>>([]);
+  const [translationSearch, setTranslationSearch] = useState("");
+  const [editingTranslation, setEditingTranslation] = useState<{ id: string; key: string; en: string; et: string; ru: string } | null>(null);
+  const [translationLoading, setTranslationLoading] = useState(false);
 
   // Chatbot activity monitor
   const [allConversations, setAllConversations] = useState<Array<{
@@ -228,12 +234,20 @@ const AdminDashboard = () => {
     setRoleLoading(false);
   }, []);
 
+  const fetchTranslations = useCallback(async () => {
+    setTranslationLoading(true);
+    const { data } = await supabase.from("translations").select("id, key, en, et, ru").order("key");
+    setTranslationRows(data ?? []);
+    setTranslationLoading(false);
+  }, []);
+
   useEffect(() => {
     if (isAdmin) {
       fetchProfiles();
       fetchRoles();
+      fetchTranslations();
     }
-  }, [isAdmin, fetchProfiles, fetchRoles]);
+  }, [isAdmin, fetchProfiles, fetchRoles, fetchTranslations]);
 
   const handleSave = async () => {
     if (!editingUser) return;
@@ -332,6 +346,21 @@ const AdminDashboard = () => {
         toast.success(`Added '${role}' role`);
         fetchRoles();
       }
+    }
+  };
+
+  const handleSaveTranslation = async () => {
+    if (!editingTranslation) return;
+    const { error } = await supabase
+      .from("translations")
+      .update({ en: editingTranslation.en, et: editingTranslation.et, ru: editingTranslation.ru })
+      .eq("id", editingTranslation.id);
+    if (error) {
+      toast.error("Failed to update translation");
+    } else {
+      toast.success("Translation updated");
+      setEditingTranslation(null);
+      fetchTranslations();
     }
   };
 
@@ -543,7 +572,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="patients" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="patients" className="gap-2">
               <Users className="h-4 w-4" /> Patients
             </TabsTrigger>
@@ -558,6 +587,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="roles" className="gap-2">
               <UserCog className="h-4 w-4" /> Roles
+            </TabsTrigger>
+            <TabsTrigger value="translations" className="gap-2">
+              <Languages className="h-4 w-4" /> Translations
             </TabsTrigger>
           </TabsList>
 
@@ -1037,6 +1069,66 @@ const AdminDashboard = () => {
                           </TableCell>
                         </TableRow>
                       )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ===== TRANSLATIONS TAB ===== */}
+          <TabsContent value="translations" className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by key…"
+                value={translationSearch}
+                onChange={(e) => setTranslationSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <ScrollArea className="w-full h-[600px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-48">Key</TableHead>
+                        <TableHead>English</TableHead>
+                        <TableHead>Estonian</TableHead>
+                        <TableHead>Russian</TableHead>
+                        <TableHead className="w-20 text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {translationLoading ? (
+                        <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                      ) : translationRows
+                          .filter((r) => r.key.toLowerCase().includes(translationSearch.toLowerCase()) || r.en.toLowerCase().includes(translationSearch.toLowerCase()))
+                          .map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{row.key}</TableCell>
+                          <TableCell className="text-sm">{editingTranslation?.id === row.id ? (
+                            <Textarea value={editingTranslation.en} onChange={(e) => setEditingTranslation({ ...editingTranslation, en: e.target.value })} rows={2} className="text-sm" />
+                          ) : row.en}</TableCell>
+                          <TableCell className="text-sm">{editingTranslation?.id === row.id ? (
+                            <Textarea value={editingTranslation.et} onChange={(e) => setEditingTranslation({ ...editingTranslation, et: e.target.value })} rows={2} className="text-sm" />
+                          ) : row.et}</TableCell>
+                          <TableCell className="text-sm">{editingTranslation?.id === row.id ? (
+                            <Textarea value={editingTranslation.ru} onChange={(e) => setEditingTranslation({ ...editingTranslation, ru: e.target.value })} rows={2} className="text-sm" />
+                          ) : row.ru}</TableCell>
+                          <TableCell className="text-right">
+                            {editingTranslation?.id === row.id ? (
+                              <div className="flex gap-1 justify-end">
+                                <Button size="sm" className="h-7" onClick={handleSaveTranslation}><Save className="h-3 w-3" /></Button>
+                                <Button size="sm" variant="outline" className="h-7" onClick={() => setEditingTranslation(null)}>✕</Button>
+                              </div>
+                            ) : (
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => setEditingTranslation({ ...row })}>Edit</Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </ScrollArea>

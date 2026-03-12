@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminNotification {
@@ -16,6 +17,7 @@ interface AdminNotification {
 const NotificationBanner = () => {
   const { permissionGranted, requestPermission } = useNotifications();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [adminNotifs, setAdminNotifs] = useState<AdminNotification[]>([]);
 
   useEffect(() => {
@@ -37,42 +39,32 @@ const NotificationBanner = () => {
 
   return (
     <div className="space-y-2">
-      {/* Admin-pushed notifications */}
       {adminNotifs.map((n) => (
-        <div
-          key={n.id}
-          className="flex items-start gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3"
-        >
+        <div key={n.id} className="flex items-start gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
           <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground">{n.title}</p>
             <p className="text-xs text-muted-foreground">{n.body}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0"
-            onClick={() => dismissNotif(n.id)}
-          >
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => dismissNotif(n.id)}>
             <X className="h-3 w-3" />
           </Button>
         </div>
       ))}
 
-      {/* System notification permission banner */}
       {permissionGranted ? (
         <div className="flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-3 text-sm text-success">
           <BellRing className="h-4 w-4" />
-          <span>Notifications active — reminders at 20:30 daily &amp; Fridays 19:00</span>
+          <span>{t("notif.active")}</span>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Bell className="h-4 w-4" />
-            <span>Enable reminders for medications &amp; video calls</span>
+            <span>{t("notif.enable")}</span>
           </div>
           <Button size="sm" variant="default" className="rounded-xl" onClick={requestPermission}>
-            Enable
+            {t("notif.enableBtn")}
           </Button>
         </div>
       )}
