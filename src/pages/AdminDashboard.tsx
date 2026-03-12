@@ -375,6 +375,14 @@ const AdminDashboard = () => {
     }))
     .sort((a, b) => b.sessions - a.sessions);
 
+  // Last 14 days array (shared)
+  const last14Days: string[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last14Days.push(d.toISOString().slice(0, 10));
+  }
+
   // Chat activity trend (last 14 days)
   const chatDailyTrend = last14Days.map((date) => {
     const daySessions = allConversations.filter((c) => c.started_at.slice(0, 10) === date);
@@ -387,12 +395,6 @@ const AdminDashboard = () => {
   });
 
   // Daily log trend (last 14 days)
-  const last14Days: string[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    last14Days.push(d.toISOString().slice(0, 10));
-  }
   const dailyTrend = last14Days.map((date) => {
     const dayLogs = allLogs.filter((l) => l.date === date);
     const medCount = dayLogs.filter((l) => l.medication_taken === true).length;
