@@ -163,6 +163,36 @@ const AdminDashboard = () => {
     }
     setChatCounts(chatMap);
 
+    // Build conversation activity feed
+    const allMsgs = msgsRes.data ?? [];
+    const msgsByConvo = new Map<string, typeof allMsgs>();
+    for (const m of allMsgs) {
+      const arr = msgsByConvo.get(m.conversation_id) ?? [];
+      arr.push(m);
+      msgsByConvo.set(m.conversation_id, arr);
+    }
+
+    const profileMap = new Map<string, string>();
+    for (const p of profilesRes.data ?? []) {
+      profileMap.set(p.id, p.first_name || p.id.slice(0, 8));
+    }
+
+    const convoFeed = (convosRes.data ?? []).map((c: any) => {
+      const msgs = msgsByConvo.get(c.id) ?? [];
+      const lastMsg = msgs.length > 0 ? msgs[0] : null; // already sorted desc
+      return {
+        id: c.id,
+        user_id: c.user_id,
+        started_at: c.started_at,
+        ended_at: c.ended_at,
+        messageCount: msgs.length,
+        lastMessage: lastMsg?.content?.slice(0, 120) ?? null,
+        lastMessageAt: lastMsg?.created_at ?? null,
+        userName: profileMap.get(c.user_id) ?? c.user_id.slice(0, 8),
+      };
+    });
+    setAllConversations(convoFeed);
+
     const enriched = (profilesRes.data ?? []).map((p: any) => {
       const logInfo = logMap.get(p.id);
       return {
