@@ -63,19 +63,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // On auth, sync language from profile
+  // On auth, sync language from profile (fire-and-forget to avoid deadlocks)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const { data } = await supabase
+        // Fire-and-forget — do NOT await inside onAuthStateChange
+        supabase
           .from("profiles")
           .select("language")
           .eq("id", session.user.id)
-          .single();
-        if (data?.language && ["en", "et", "ru"].includes(data.language)) {
-          setLanguageState(data.language as Language);
-          localStorage.setItem(LANG_KEY, data.language);
-        }
+          .single()
+          .then(({ data }) => {
+            if (data?.language && ["en", "et", "ru"].includes(data.language)) {
+              setLanguageState(data.language as Language);
+              localStorage.setItem(LANG_KEY, data.language);
+            }
+          });
       }
     });
     return () => subscription.unsubscribe();
