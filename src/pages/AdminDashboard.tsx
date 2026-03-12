@@ -543,7 +543,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="patients" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="patients" className="gap-2">
               <Users className="h-4 w-4" /> Patients
             </TabsTrigger>
@@ -555,6 +555,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="roles" className="gap-2">
+              <UserCog className="h-4 w-4" /> Roles
             </TabsTrigger>
           </TabsList>
 
