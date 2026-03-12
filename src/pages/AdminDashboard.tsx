@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft, RefreshCw, Save, Users, Activity, MessageSquare,
-  Shield, Search, Bell, Send, Pill, BarChart3, Eye,
+  Shield, Search, Bell, Send, Pill, BarChart3, Eye, Bot, Clock,
+  ChevronDown, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -93,6 +94,21 @@ const AdminDashboard = () => {
   // Chat session counts
   const [chatCounts, setChatCounts] = useState<Map<string, number>>(new Map());
 
+  // Chatbot activity monitor
+  const [allConversations, setAllConversations] = useState<Array<{
+    id: string;
+    user_id: string;
+    started_at: string;
+    ended_at: string | null;
+    messageCount: number;
+    lastMessage: string | null;
+    lastMessageAt: string | null;
+    userName: string;
+  }>>([]);
+  const [expandedConvo, setExpandedConvo] = useState<string | null>(null);
+  const [expandedMessages, setExpandedMessages] = useState<{ role: string; content: string; created_at: string }[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -102,11 +118,12 @@ const AdminDashboard = () => {
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    const [profilesRes, logsRes, convosRes, notifsRes] = await Promise.all([
+    const [profilesRes, logsRes, convosRes, notifsRes, msgsRes] = await Promise.all([
       supabase.from("profiles").select("*").order("enrolled_at", { ascending: false }),
       supabase.from("daily_logs").select("user_id, date, medication_taken, steps, heart_rate, spo2, sleep_hours, stress_level").order("date", { ascending: false }),
-      supabase.from("chat_conversations").select("id, user_id"),
+      supabase.from("chat_conversations").select("id, user_id, started_at, ended_at").order("started_at", { ascending: false }),
       supabase.from("admin_notifications").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("chat_messages").select("conversation_id, role, content, created_at").order("created_at", { ascending: false }),
     ]);
 
     if (profilesRes.error) {
@@ -145,6 +162,36 @@ const AdminDashboard = () => {
       chatMap.set(c.user_id, (chatMap.get(c.user_id) ?? 0) + 1);
     }
     setChatCounts(chatMap);
+
+    // Build conversation activity feed
+    const allMsgs = msgsRes.data ?? [];
+    const msgsByConvo = new Map<string, typeof allMsgs>();
+    for (const m of allMsgs) {
+      const arr = msgsByConvo.get(m.conversation_id) ?? [];
+      arr.push(m);
+      msgsByConvo.set(m.conversation_id, arr);
+    }
+
+    const profileMap = new Map<string, string>();
+    for (const p of profilesRes.data ?? []) {
+      profileMap.set(p.id, p.first_name || p.id.slice(0, 8));
+    }
+
+    const convoFeed = (convosRes.data ?? []).map((c: any) => {
+      const msgs = msgsByConvo.get(c.id) ?? [];
+      const lastMsg = msgs.length > 0 ? msgs[0] : null; // already sorted desc
+      return {
+        id: c.id,
+        user_id: c.user_id,
+        started_at: c.started_at,
+        ended_at: c.ended_at,
+        messageCount: msgs.length,
+        lastMessage: lastMsg?.content?.slice(0, 120) ?? null,
+        lastMessageAt: lastMsg?.created_at ?? null,
+        userName: profileMap.get(c.user_id) ?? c.user_id.slice(0, 8),
+      };
+    });
+    setAllConversations(convoFeed);
 
     const enriched = (profilesRes.data ?? []).map((p: any) => {
       const logInfo = logMap.get(p.id);
@@ -271,6 +318,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExpandConvo = async (convoId: string) => {
+    if (expandedConvo === convoId) {
+      setExpandedConvo(null);
+      return;
+    }
+    setExpandedConvo(convoId);
+    setLoadingMessages(true);
+    const { data: msgs } = await supabase
+      .from("chat_messages")
+      .select("role, content, created_at")
+      .eq("conversation_id", convoId)
+      .order("created_at", { ascending: true });
+    setExpandedMessages(msgs ?? []);
+    setLoadingMessages(false);
+  };
+
   const filteredProfiles = profiles.filter((p) => {
     const q = search.toLowerCase();
     return (
@@ -312,13 +375,26 @@ const AdminDashboard = () => {
     }))
     .sort((a, b) => b.sessions - a.sessions);
 
-  // Daily log trend (last 14 days)
+  // Last 14 days array (shared)
   const last14Days: string[] = [];
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     last14Days.push(d.toISOString().slice(0, 10));
   }
+
+  // Chat activity trend (last 14 days)
+  const chatDailyTrend = last14Days.map((date) => {
+    const daySessions = allConversations.filter((c) => c.started_at.slice(0, 10) === date);
+    const totalMessages = daySessions.reduce((a, b) => a + b.messageCount, 0);
+    return {
+      date: date.slice(5),
+      sessions: daySessions.length,
+      messages: totalMessages,
+    };
+  });
+
+  // Daily log trend (last 14 days)
   const dailyTrend = last14Days.map((date) => {
     const dayLogs = allLogs.filter((l) => l.date === date);
     const medCount = dayLogs.filter((l) => l.medication_taken === true).length;
@@ -418,9 +494,12 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="patients" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="patients" className="gap-2">
               <Users className="h-4 w-4" /> Patients
+            </TabsTrigger>
+            <TabsTrigger value="chatbot" className="gap-2">
+              <Bot className="h-4 w-4" /> Chatbot
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" /> Analytics
@@ -513,6 +592,127 @@ const AdminDashboard = () => {
                       )}
                     </TableBody>
                   </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ===== CHATBOT ACTIVITY TAB ===== */}
+          <TabsContent value="chatbot" className="space-y-6">
+            {/* Chat activity over time */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Chatbot Activity (Last 14 Days)</CardTitle>
+                <CardDescription>Sessions started and messages exchanged per day</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chatDailyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="date" tick={{ fill: "hsl(200, 10%, 50%)" }} />
+                      <YAxis allowDecimals={false} tick={{ fill: "hsl(200, 10%, 50%)" }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(0, 0%, 100%)",
+                          border: "1px solid hsl(160, 15%, 88%)",
+                          borderRadius: "0.5rem",
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="sessions" fill="hsl(168, 55%, 42%)" name="Sessions" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="messages" fill="hsl(200, 60%, 50%)" name="Messages" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Conversation feed */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Conversation Timeline
+                </CardTitle>
+                <CardDescription>All chatbot sessions — click to expand full transcript</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  {allConversations.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">No conversations yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allConversations.map((c) => (
+                        <div key={c.id} className="rounded-lg border border-border overflow-hidden">
+                          <button
+                            onClick={() => handleExpandConvo(c.id)}
+                            className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/50 transition-colors"
+                          >
+                            {expandedConvo === c.id ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-foreground">{c.userName}</span>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {c.messageCount} msgs
+                                </Badge>
+                                {c.ended_at && (
+                                  <Badge variant="outline" className="text-[10px]">Ended</Badge>
+                                )}
+                              </div>
+                              {c.lastMessage && (
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                  {c.lastMessage}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(c.started_at).toLocaleDateString()}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(c.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                          </button>
+
+                          {expandedConvo === c.id && (
+                            <div className="border-t border-border bg-muted/30 p-3 space-y-2">
+                              {loadingMessages ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">Loading…</p>
+                              ) : expandedMessages.length === 0 ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">No messages</p>
+                              ) : (
+                                expandedMessages.map((m, i) => (
+                                  <div
+                                    key={i}
+                                    className={`text-sm rounded-lg px-3 py-2 ${
+                                      m.role === "user"
+                                        ? "bg-primary/10 text-foreground ml-8"
+                                        : "bg-card text-foreground mr-8 border border-border/50"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                        {m.role}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                      </span>
+                                    </div>
+                                    <p className="whitespace-pre-wrap">{m.content}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
               </CardContent>
             </Card>
