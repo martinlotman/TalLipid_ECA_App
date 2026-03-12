@@ -215,9 +215,25 @@ const AdminDashboard = () => {
     setLoading(false);
   }, []);
 
+  const fetchRoles = useCallback(async () => {
+    setRoleLoading(true);
+    const { data } = await supabase.from("user_roles").select("user_id, role");
+    const map = new Map<string, string[]>();
+    for (const r of data ?? []) {
+      const existing = map.get(r.user_id) ?? [];
+      existing.push(r.role);
+      map.set(r.user_id, existing);
+    }
+    setUserRoles(map);
+    setRoleLoading(false);
+  }, []);
+
   useEffect(() => {
-    if (isAdmin) fetchProfiles();
-  }, [isAdmin, fetchProfiles]);
+    if (isAdmin) {
+      fetchProfiles();
+      fetchRoles();
+    }
+  }, [isAdmin, fetchProfiles, fetchRoles]);
 
   const handleSave = async () => {
     if (!editingUser) return;
