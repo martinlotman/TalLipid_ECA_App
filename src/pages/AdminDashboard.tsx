@@ -94,6 +94,21 @@ const AdminDashboard = () => {
   // Chat session counts
   const [chatCounts, setChatCounts] = useState<Map<string, number>>(new Map());
 
+  // Chatbot activity monitor
+  const [allConversations, setAllConversations] = useState<Array<{
+    id: string;
+    user_id: string;
+    started_at: string;
+    ended_at: string | null;
+    messageCount: number;
+    lastMessage: string | null;
+    lastMessageAt: string | null;
+    userName: string;
+  }>>([]);
+  const [expandedConvo, setExpandedConvo] = useState<string | null>(null);
+  const [expandedMessages, setExpandedMessages] = useState<{ role: string; content: string; created_at: string }[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     supabase
