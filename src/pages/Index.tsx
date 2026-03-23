@@ -1,4 +1,4 @@
-import { Activity, ClipboardList, Download, LogOut, Shield, Watch } from "lucide-react";
+import { Activity, ClipboardList, Download, LogOut, Shield, Smartphone, Watch } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
@@ -52,6 +52,9 @@ const Index = () => {
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title={t("watchSetup.title")}>
             <Watch className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/shortcuts")} title="Apple Shortcuts">
+            <Smartphone className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={signOut} title={t("nav.signOut")}>
             <LogOut className="h-4 w-4" />

@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
 import WatchSetup from "./pages/WatchSetup";
 import Questionnaires from "./pages/Questionnaires";
+import ShortcutsSetup from "./pages/ShortcutsSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/install" element={<InstallPage />} />
             <Route path="/watch-setup" element={<ProtectedRoute><WatchSetup /></ProtectedRoute>} />
             <Route path="/questionnaires" element={<ProtectedRoute><Questionnaires /></ProtectedRoute>} />
+            <Route path="/shortcuts" element={<ProtectedRoute><ShortcutsSetup /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
