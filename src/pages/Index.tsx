@@ -60,6 +60,7 @@ const Index = () => {
           <Button variant="ghost" size="icon" onClick={signOut} title={t("nav.signOut")}>
             <LogOut className="h-4 w-4" />
           </Button>
+          </div>
         </div>
       </header>
 
