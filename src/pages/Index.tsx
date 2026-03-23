@@ -35,10 +35,11 @@ const Index = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Activity className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold text-foreground">TalLipid</h1>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
           </div>
+          <div className="flex items-center gap-1">
           {isAdmin && (
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} title="Admin">
               <Shield className="h-4 w-4" />
@@ -59,6 +60,7 @@ const Index = () => {
           <Button variant="ghost" size="icon" onClick={signOut} title={t("nav.signOut")}>
             <LogOut className="h-4 w-4" />
           </Button>
+          </div>
         </div>
       </header>
 
