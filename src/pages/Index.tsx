@@ -53,6 +53,9 @@ const Index = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/watch-setup")} title={t("watchSetup.title")}>
             <Watch className="h-4 w-4" />
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/shortcuts")} title="Apple Shortcuts">
+            <Smartphone className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={signOut} title={t("nav.signOut")}>
             <LogOut className="h-4 w-4" />
           </Button>

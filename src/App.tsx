@@ -37,6 +37,7 @@ const App = () => (
             <Route path="/install" element={<InstallPage />} />
             <Route path="/watch-setup" element={<ProtectedRoute><WatchSetup /></ProtectedRoute>} />
             <Route path="/questionnaires" element={<ProtectedRoute><Questionnaires /></ProtectedRoute>} />
+            <Route path="/shortcuts" element={<ProtectedRoute><ShortcutsSetup /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
