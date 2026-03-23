@@ -1,4 +1,4 @@
-import { Activity, ClipboardList, Download, LogOut, Shield, Watch } from "lucide-react";
+import { Activity, ClipboardList, Download, LogOut, Shield, Smartphone, Watch } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MedicationCheck from "@/components/MedicationCheck";
