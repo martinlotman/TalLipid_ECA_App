@@ -163,7 +163,7 @@ const InstallPage = () => {
                       <h3 className="font-semibold text-foreground">iPhone / iPad</h3>
                     </div>
                     <p className="text-sm text-foreground/80">
-                      {t("install.iosStep1")} <Share className="inline h-4 w-4" /> → {t("install.iosStep2")}
+                      {t("install.iosStep1")} <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"><Share className="inline h-3.5 w-3.5" /> Share</span> → {t("install.iosStep2")}
                     </p>
                   </CardContent>
                 </Card>
