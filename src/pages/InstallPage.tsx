@@ -87,7 +87,7 @@ const InstallPage = () => {
                   <ol className="space-y-4 text-sm text-foreground/80">
                     <li className="flex items-start gap-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
-                      <span className="pt-0.5">{t("install.iosStep1")} <Share className="inline h-4 w-4 text-primary" /></span>
+                      <span className="pt-0.5">{t("install.iosStep1")} <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"><Share className="inline h-3.5 w-3.5" /> Share</span></span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
