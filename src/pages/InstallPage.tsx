@@ -87,7 +87,29 @@ const InstallPage = () => {
                   <ol className="space-y-4 text-sm text-foreground/80">
                     <li className="flex items-start gap-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
-                      <span className="pt-0.5">{t("install.iosStep1")} <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"><Share className="inline h-3.5 w-3.5" /> Share</span></span>
+                      <div className="space-y-2 pt-0.5">
+                        <p>{t("install.iosStep1")}</p>
+                        <div className="rounded-xl border border-border bg-muted/40 p-3">
+                          <p className="mb-2 text-xs font-medium text-muted-foreground">Look at Safari's toolbar — tap this icon:</p>
+                          <div className="flex items-center justify-around rounded-lg border border-border bg-background px-2 py-2.5 shadow-sm">
+                            <span className="text-muted-foreground/40 text-lg">‹</span>
+                            <span className="text-muted-foreground/40 text-lg">›</span>
+                            <div className="relative flex flex-col items-center">
+                              <div className="absolute -top-7 rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
+                                Tap here
+                              </div>
+                              <div className="rounded-md ring-2 ring-primary ring-offset-2 ring-offset-background">
+                                <Share className="h-5 w-5 text-primary" strokeWidth={2.2} />
+                              </div>
+                            </div>
+                            <span className="text-muted-foreground/40 text-sm">📖</span>
+                            <span className="text-muted-foreground/40 text-sm">⎘</span>
+                          </div>
+                          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                            The Share button is the square with an upward arrow. On iPhone it's at the <strong>bottom</strong> of Safari; on iPad it's at the <strong>top-right</strong>.
+                          </p>
+                        </div>
+                      </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
