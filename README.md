@@ -187,15 +187,284 @@ You can edit the project in three ways:
 
 ---
 
-## Deployment
+## Deployment checklist
 
-- **Web / PWA** — published via Lovable to https://tallipidproject.lovable.app. Use the Publish button in Lovable to ship a new version.
-- **iOS / Android** — produced by running `npx cap sync` after `npm run build`, then opening the native projects in Xcode / Android Studio. The App Store / Play Store bundle identifiers and signing details are tracked in the deployment-roadmap memory.
+### Prerequisites
+
+| Item | Where to get it |
+|------|-----------------|
+| Lovable account with Cloud enabled | https://lovable.dev |
+| GitHub repo connected | Settings → GitHub → Connect |
+| REDCap API token | Your study REDCap → API → Request token |
+| Google OAuth client ID | Google Cloud Console → Credentials |
+| Apple Developer account (native iOS) | https://developer.apple.com |
+| Google Play Console (native Android) | https://play.google.com/console |
+
+### 1. Configure backend secrets
+
+All secrets are stored in **Lovable Cloud → Secrets** (never in the repo).
+
+```sh
+# Required secrets and how to obtain them:
+#
+# SUPABASE_URL          — auto-provisioned by Lovable Cloud
+# SUPABASE_ANON_KEY     — auto-provisioned by Lovable Cloud
+# SUPABASE_SERVICE_ROLE_KEY — auto-provisioned by Lovable Cloud (edge functions only)
+# SUPABASE_DB_URL       — auto-provisioned by Lovable Cloud
+# SUPABASE_PUBLISHABLE_KEY — auto-provisioned by Lovable Cloud
+# LOVABLE_API_KEY       — auto-provisioned by Lovable Cloud (AI Gateway + connectors)
+# REDCAP_API_KEY        — from your REDCap project API page
+# REDCAP_API_URL        — your REDCap instance base URL (e.g. https://redcap.ut.ee/api/)
+```
+
+**Verify secrets are set:**
+
+1. Open your project in Lovable.
+2. Go to **Cloud → Secrets**.
+3. Confirm all 8 secrets above show a value (not empty).
+4. If any are missing, click **Add Secret** and paste the value.
+
+### 2. Configure authentication
+
+```sh
+# In Lovable Cloud → Users → Auth Settings:
+# 1. Enable Email + Password provider
+# 2. Enable Google provider
+#    - Paste your Google Cloud OAuth 2.0 Client ID
+#    - Add the Lovable publish URL to Google OAuth redirect URIs
+# 3. Disable anonymous sign-ups (required for research traceability)
+# 4. Enable password HIBP check (Have I Been Pwned)
+```
+
+### 3. Run database migrations
+
+```sh
+# Migrations live in supabase/migrations/
+# They must be applied in order — each file is numbered.
+
+# Lovable Cloud auto-applies migrations on push, but you can verify:
+# Go to Cloud → Database → Tables and confirm:
+#   - profiles
+#   - user_roles
+#   - health_logs
+#   - questionnaire_responses
+#   - translations
+#   - notifications
+# all exist with RLS enabled (padlock icon).
+```
+
+### 4. Deploy edge functions
+
+Edge functions deploy automatically when you push to the connected GitHub repo. Manual verification:
+
+```sh
+# In Lovable Cloud → Edge Functions:
+# 1. health-chat          — status should show "Deployed"
+# 2. health-data-import   — status should show "Deployed"
+# 3. redcap-weekly-sync   — status should show "Deployed"
+#
+# Test health-chat:
+curl -X POST \
+  -H "Authorization: Bearer <your-anon-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"hello","language":"en"}' \
+  <supabase-url>/functions/v1/health-chat
+```
+
+### 5. Build and publish web / PWA
+
+```sh
+# Local build test
+npm ci
+npm run build
+
+# The dist/ folder should contain:
+#   index.html, assets/, manifest.json, sw.js (if using custom SW)
+#
+# Publish via Lovable:
+# 1. Click Publish button (top-right)
+# 2. Verify title, meta description, OG tags in index.html
+# 3. Click Update to go live
+```
+
+### 6. Build native iOS / Android (optional)
+
+```sh
+# 1. Sync web assets to native projects
+npm run build
+npx cap sync
+
+# 2. iOS — open in Xcode
+npx cap open ios
+#   - Set bundle identifier (e.g. ee.ut.tallipid)
+#   - Configure signing & capabilities (Push Notifications, HealthKit if needed)
+#   - Product → Archive → Distribute → App Store Connect
+
+# 3. Android — open in Android Studio
+npx cap open android
+#   - Set applicationId (e.g. ee.ut.tallipid)
+#   - Build → Generate Signed Bundle → Upload to Play Console
+```
+
+### 7. Post-deployment verification
+
+```sh
+# Health check script (run after every deploy)
+# 1. Open published URL in browser incognito window
+# 2. Confirm manifest.json loads (DevTools → Application → Manifest)
+# 3. Sign up as test user, verify:
+#    - Profile created in database
+#    - REDCap ID captured
+#    - Welcome notification received
+# 4. Submit one health log, verify:
+#    - Entry appears in Daily Log History
+#    - Edge function returns 200 (no console errors)
+# 5. Open /admin as non-admin → confirm 403 / redirect
+# 6. Open /admin as admin → confirm dashboard loads
+# 7. Trigger REDCap sync manually → verify record appears in REDCap
+```
 
 ---
 
-## Security notes
+## Security checklist
 
-- RLS is on for every public table; policies are scoped to `auth.uid()` for participant-owned data and to the `admin` role (via `has_role()`) for researcher-only data.
-- Service role keys and database passwords are only ever used inside edge functions; they are never shipped to the client.
-- Roles are stored in `public.user_roles`, never on the profile, to prevent client-side privilege escalation.
+### Row-Level Security (RLS)
+
+```sh
+# Every public table MUST have:
+# 1. RLS enabled           — ALTER TABLE ... ENABLE ROW LEVEL SECURITY
+# 2. GRANT statements      — at minimum: authenticated SELECT/INSERT/UPDATE/DELETE
+# 3. Policies scoped to auth.uid() for participant data
+# 4. Policies using has_role('admin') for researcher data
+#
+# Run this query to audit:
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public' AND tablename NOT LIKE 'pg_%';
+# Every rowsecurity column should show TRUE.
+```
+
+### Service role key handling
+
+```sh
+# DO:
+#   - Use SUPABASE_SERVICE_ROLE_KEY only inside edge functions
+#   - Use it to bypass RLS for admin/bulk operations
+#   - Log access for audit trails
+#
+# DON'T:
+#   - Never expose service_role_key to browser/client
+#   - Never commit it to GitHub (already in .gitignore, but verify)
+#   - Never use it in frontend Supabase client initialization
+```
+
+### Recommended permissions matrix
+
+| Actor | Database access | Edge functions | REDCap | Notes |
+|-------|-----------------|----------------|--------|-------|
+| **Anonymous** | None | None (health-chat may allow anon for testing, disable in prod) | None | No unauthenticated reads |
+| **Authenticated participant** | Own profile, own health_logs, own questionnaire_responses, own notifications | health-chat (with own context), health-data-import (own data only) | None | RLS scopes to auth.uid() |
+| **Researcher / admin** | All rows via has_role('admin') policies | health-data-import (bulk), health-chat (any context), redcap-weekly-sync trigger | Read/Write via REDCap API token | Must have 'admin' role in user_roles table |
+| **Edge functions (service role)** | All tables (bypass RLS) | N/A | POST to REDCap API | Runs server-side only; never exposed to client |
+
+### Setting up the admin role
+
+```sql
+-- Run this in Lovable Cloud SQL Editor (or via migration):
+-- 1. Create role enum (if not exists)
+CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user');
+
+-- 2. Create user_roles table (if not exists)
+CREATE TABLE public.user_roles (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    role public.app_role NOT NULL,
+    UNIQUE (user_id, role)
+);
+
+-- 3. Grants (required for Data API access)
+GRANT SELECT ON public.user_roles TO authenticated;
+GRANT ALL ON public.user_roles TO service_role;
+
+-- 4. Enable RLS
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- 5. Create the security definer function (if not exists)
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  )
+$$;
+
+-- 6. Assign first admin (replace with actual researcher UUID)
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<researcher-auth-uuid-here>', 'admin');
+```
+
+### REDCap API security
+
+```sh
+# 1. Use a dedicated REDCap API token for this app only
+#    (don't reuse a personal token)
+# 2. Store as REDCAP_API_KEY in Lovable Cloud Secrets
+# 3. The token should have these rights in REDCap:
+#    - API Import / Export Rights: ✅ Import
+#    - Data Access Groups: the study DAG only
+#    - No delete rights (append-only sync)
+# 4. Rotate the token every 90 days or after any team member leaves
+# 5. REDCap API URL should use HTTPS only (verify certificate)
+```
+
+### Google OAuth hardening
+
+```sh
+# In Google Cloud Console → Credentials → OAuth 2.0 Client:
+# 1. Authorized JavaScript origins:
+#    - https://tallipidproject.lovable.app
+#    - https://localhost:5173 (local dev only)
+# 2. Authorized redirect URIs:
+#    - https://<your-supabase-project>.supabase.co/auth/v1/callback
+# 3. Application type: Web application
+# 4. Do NOT enable implicit flow (Authorization code flow only)
+```
+
+### Secrets rotation schedule
+
+| Secret | Rotation frequency | How to rotate |
+|--------|-------------------|---------------|
+| REDCAP_API_KEY | 90 days | REDCap → API → Regenerate token |
+| Google OAuth Client Secret | 180 days or on suspicion | Google Cloud → Credentials → Reset |
+| SUPABASE_SERVICE_ROLE_KEY | On suspicion or team change | Lovable Cloud → Secrets → Regenerate |
+| LOVABLE_API_KEY | Auto-managed | Use lovable_api_key--rotate tool if needed |
+
+### Audit checklist (run monthly)
+
+```sh
+# 1. Review user_roles table for unexpected admins
+SELECT u.email, ur.role, ur.created_at
+FROM public.user_roles ur
+JOIN auth.users u ON ur.user_id = u.id;
+
+# 2. Check for failed auth attempts (anomalies)
+# In Lovable Cloud → Logs → Auth, look for:
+#   - Unusual login volumes
+#   - Failed password attempts per IP
+#   - Sign-ups from unexpected regions
+
+# 3. Verify edge function logs for errors
+# In Lovable Cloud → Edge Functions → Logs:
+#   - 401/403 responses should be rare
+#   - redcap-weekly-sync should report 200 on last run
+
+# 4. Confirm no client-side role checks
+# grep -r "isAdmin\|role.*localStorage\|role.*sessionStorage" src/
+# Should return 0 matches — roles must always be checked server-side
+```
+
+---
